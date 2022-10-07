@@ -78,14 +78,11 @@ jobs:
       #   run: /var/www/vendor/bin/exec-all-tests.sh /var/www/wordpress ci
 
       - name: Generate coverage report
-        uses: php-actions/phpunit@v3
         env:
           XDEBUG_MODE: coverage
-        with:
-          bootstrap: vendor/autoload.php
-          configuration: phpunit.xml.dist
-          php_extensions: xdebug
-          args: tests --coverage-clover ./coverage.xml
+        run: |
+          cd /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }}
+          ./vendor/bin/phpunit --coverage-clover=coverage.xml
 
       - name: Upload to Codecov
         uses: codecov/codecov-action@v2
