@@ -47,14 +47,12 @@ jobs:
       uses: tj-actions/changed-files@v31
 
     - name: Run PHPCS
-      run: |
-        echo "List all the files that have changed: ${{ join(steps.changed-files.outputs.all_changed_files, ' ') }}"
-        vendor/bin/phpcs -q --report=checkstyle ${{ join(steps.changed-files.outputs.all_changed_files, ' ') }} | cs2pr
-      # if: steps.changed-files-specific.outputs.any_changed == 'true'
+      run: vendor/bin/phpcs -q --report=checkstyle ${{ join(steps.changed-files.outputs.all_changed_files, ' ') }} | cs2pr
+      if: steps.changed-files.outputs.any_changed == 'true'
 
     - name: Run Stylelint
       uses: Humanoidfr/action-stylelint@master
-      if: steps.changed-files-specific.outputs.any_changed == 'true'
+      if: steps.changed-files.outputs.any_changed == 'true'
       with:
         github_token: ${{ secrets.token }}
         ssh_key: ${{ secrets.private-key }}
@@ -67,7 +65,7 @@ jobs:
 
     - name: Run ESlint
       uses: Humanoidfr/action-eslint@master
-      if: steps.changed-files-specific.outputs.any_changed == 'true'
+      if: steps.changed-files.outputs.any_changed == 'true'
       with:
         github_token: ${{ secrets.token }}
         ssh_key: ${{ secrets.private-key }}
