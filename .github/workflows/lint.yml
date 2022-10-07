@@ -12,13 +12,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         fetch-depth: 0
-        
-    - name: Get changed files
-      id: changed-files
-      uses: tj-actions/changed-files@v31
 
     - name: Setup SSH
       uses: webfactory/ssh-agent@v0.5.4
@@ -46,31 +42,30 @@ jobs:
     - name: Install dependencies
       run: composer install --prefer-dist --no-scripts --no-progress
 
+    - name: Get changed files
+      id: changed-files
+      uses: tj-actions/changed-files@v31
+
     - name: Run PHPCS
-      run: |
-        echo "List all the files that have changed: ${{ steps.changed-files-specific.outputs.all_changed_files }}"
-        vendor/bin/phpcs -q --report=checkstyle ${{ steps.changed-files-specific.outputs.all_changed_files }} | cs2pr
-      if: steps.changed-files-specific.outputs.any_changed == 'true'
+      if: steps.changed-files.outputs.all_changed_files != ''
+      run: vendor/bin/phpcs -q --report=checkstyle ${{ join(steps.changed-files.outputs.all_changed_files, ' ') }} | cs2pr
 
     - name: Run Stylelint
-      uses: Humanoidfr/action-stylelint@master
-      if: steps.changed-files-specific.outputs.any_changed == 'true'
+      if: steps.changed-files.outputs.all_changed_files != ''
+      uses: reviewdog/action-stylelint@v1
       with:
         github_token: ${{ secrets.token }}
-        ssh_key: ${{ secrets.private-key }}
         reporter: github-pr-review
         filter_mode: diff_context
         fail_on_error: true
-        packages: 'stylelint-scss stylelint-config-standard'
         stylelint_input: '**/*.scss'
         stylelint_config: './.stylelintrc'
 
     - name: Run ESlint
-      uses: Humanoidfr/action-eslint@master
-      if: steps.changed-files-specific.outputs.any_changed == 'true'
+      uses: reviewdog/action-eslint@v1
+      if: steps.changed-files.outputs.all_changed_files != ''
       with:
         github_token: ${{ secrets.token }}
-        ssh_key: ${{ secrets.private-key }}
         reporter: github-pr-review
         filter_mode: diff_context
         fail_on_error: true
