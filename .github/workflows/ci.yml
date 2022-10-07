@@ -76,3 +76,20 @@ jobs:
       - name: Run all Unit/Integration tests
         id: unit-tests
         run: /var/www/vendor/bin/exec-all-tests.sh /var/www/wordpress ci
+
+      - name: Generate coverage report
+        uses: php-actions/phpunit@v3
+        env:
+          XDEBUG_MODE: coverage
+        with:
+          bootstrap: vendor/autoload.php
+          configuration: phpunit.xml
+          php_extensions: xdebug
+          args: tests --coverage-clover ./coverage.xml
+
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v2
+        with:
+          token: ${{ secrets.CODE_COV_TOKEN }}
+          files: ./coverage.xml
+          verbose: true
