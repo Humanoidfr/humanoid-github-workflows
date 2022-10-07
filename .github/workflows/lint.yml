@@ -20,12 +20,6 @@ jobs:
       id: changed-files
       uses: tj-actions/changed-files@v31
 
-    - name: List all changed files
-      run: |
-        for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
-          echo "$file was changed"
-        done
-
     - name: Setup SSH
       uses: webfactory/ssh-agent@v0.5.4
       with:
@@ -54,8 +48,8 @@ jobs:
 
     - name: Run PHPCS
       run: |
-        echo "List all the files that have changed: ${{ steps.changed-files-specific.outputs.all_changed_files }}"
-        vendor/bin/phpcs -q --report=checkstyle ${{ steps.changed-files-specific.outputs.all_changed_files }} | cs2pr
+        echo "List all the files that have changed: ${{ join(steps.changed-files-specific.outputs.all_changed_files, ' ') }}"
+        vendor/bin/phpcs -q --report=checkstyle ${{ join(steps.changed-files-specific.outputs.all_changed_files, ' ') }} | cs2pr
       # if: steps.changed-files-specific.outputs.any_changed == 'true'
 
     - name: Run Stylelint
