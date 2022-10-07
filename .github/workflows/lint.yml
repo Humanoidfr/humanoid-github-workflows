@@ -8,6 +8,7 @@ on:
         required: true
 jobs:
   lint:
+    name: Run linters
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
