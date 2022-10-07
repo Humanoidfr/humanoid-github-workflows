@@ -20,7 +20,6 @@ on:
         required: true
 jobs:
   container:
-    name: CI
     runs-on: ubuntu-latest
     container:
       image: dockeregistry.humanoid.fr/${{ inputs.target }}
