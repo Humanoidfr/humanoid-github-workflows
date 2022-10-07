@@ -1,0 +1,80 @@
+name: CI
+on:
+  workflow_call:
+    inputs:
+      target:
+        required: true
+        type: string
+      type:
+        description: 'plugins|themes'
+        type: string
+        required: true
+    secrets:
+      token:
+        required: true
+      private-key:
+        required: true
+      docker-username:
+        required: true
+      docker-password:
+        required: true
+concurrency:
+  group: ${{ github.head_ref || github.ref_name }}-ci
+  cancel-in-progress: true
+jobs:
+  container:
+    name: CI
+    runs-on: ubuntu-latest
+    container:
+      image: dockeregistry.humanoid.fr/${{ inputs.target }}
+      options: --user root
+      credentials:
+        username: ${{ secrets.docker-username }}
+        password: ${{ secrets.docker-password }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: ${{ github.event.repository.name }}-${{ github.run_id }}-${{ github.run_number }}
+
+      - name: Start services
+        run: |
+          service mariadb restart &> /dev/null; \
+          service php$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')-fpm restart &> /dev/null; \
+          service redis-server restart &> /dev/null; \
+          service nginx restart &> /dev/null; \
+          service elasticsearch restart &> /dev/null;
+      - name: Setup SSH
+        run: |
+          echo "APP_WEBSITE=${{ inputs.target }}" >> $GITHUB_ENV
+          echo "APP_ENV=local" >> $GITHUB_ENV
+          useradd -r -d $HOME -s /bin/bash -g root -G sudo -u 1001 ci
+          echo "${{ secrets.private-key }}" > /tmp/sshkey
+          chmod 600 /tmp/sshkey
+          chown ci:root /tmp/sshkey
+          echo "GIT_SSH_COMMAND=ssh -i /tmp/sshkey -o StrictHostKeyChecking=no" >> $GITHUB_ENV
+
+      - name: Checkout Humanoid CI
+        uses: actions/checkout@v2
+        with:
+          repository: Humanoidfr/humanoid-ci
+          token: ${{ secrets.token }}
+          path: .github/actions/humanoid-ci
+
+      - name: "Checkout repositories to current branch"
+        run: ./.github/actions/humanoid-ci/scripts/checkout.sh
+        shell: bash
+
+      - name: Setup current repository
+        run: |
+          rm -rf /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }}
+          mv ${{ github.event.repository.name }}-${{ github.run_id }}-${{ github.run_number }} /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }}
+          chown -R root:root /var/www/
+          cd /var/www/wordpress/wp-content/mu-plugins/humanoid-core && composer install -n
+          cd /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }} && composer install -n
+        shell: bash
+
+      - name: Run all Unit/Integration tests
+        id: unit-tests
+        run: /var/www/vendor/bin/exec-all-tests.sh /var/www/wordpress ci

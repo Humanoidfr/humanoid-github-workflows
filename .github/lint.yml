@@ -1,0 +1,80 @@
+name: Lint
+on:
+  workflow_call:
+    secrets:
+      token:
+        required: true
+      private-key:
+        required: true
+concurrency:
+  group: ${{ github.head_ref || github.ref_name }}-lint
+  cancel-in-progress: true
+jobs:
+  lint:
+    name: Linter
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+        
+    - name: Get changed files
+      id: changed-files
+      uses: tj-actions/changed-files@v31
+
+    - name: Setup SSH
+      uses: webfactory/ssh-agent@v0.5.4
+      with:
+        ssh-private-key: ${{ secrets.private-key }}
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '7.4'
+        coverage: none
+        tools: composer, cs2pr
+
+    - name: Get Composer cache directory
+      id: composer-cache
+      run: echo "::set-output name=dir::$(composer config cache-files-dir)"
+
+    - name: Setup cache
+      uses: pat-s/always-upload-cache@v1.1.4
+      with:
+        path: ${{ steps.composer-cache.outputs.dir }}
+        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+        restore-keys: ${{ runner.os }}-composer-
+
+    - name: Install dependencies
+      run: composer install --prefer-dist --no-scripts --no-progress
+
+    - name: Run PHPCS
+      run: |
+        echo "List all the files that have changed: ${{ steps.changed-files-specific.outputs.all_changed_files }}"
+        vendor/bin/phpcs -q --report=checkstyle ${{ steps.changed-files-specific.outputs.all_changed_files }} | cs2pr
+      if: steps.changed-files-specific.outputs.any_changed == 'true'
+
+    - name: Run Stylelint
+      uses: Humanoidfr/action-stylelint@master
+      if: steps.changed-files-specific.outputs.any_changed == 'true'
+      with:
+        github_token: ${{ secrets.token }}
+        ssh_key: ${{ secrets.private-key }}
+        reporter: github-pr-review
+        filter_mode: diff_context
+        fail_on_error: true
+        packages: 'stylelint-scss stylelint-config-standard'
+        stylelint_input: '**/*.scss'
+        stylelint_config: './.stylelintrc'
+
+    - name: Run ESlint
+      uses: Humanoidfr/action-eslint@master
+      if: steps.changed-files-specific.outputs.any_changed == 'true'
+      with:
+        github_token: ${{ secrets.token }}
+        ssh_key: ${{ secrets.private-key }}
+        reporter: github-pr-review
+        filter_mode: diff_context
+        fail_on_error: true
+        eslint_flags: 'assets/javascripts/'
