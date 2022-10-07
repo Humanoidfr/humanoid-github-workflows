@@ -47,19 +47,17 @@ jobs:
       uses: tj-actions/changed-files@v31
 
     - name: Run PHPCS
-      run: vendor/bin/phpcs -q --report=checkstyle ${{ join(steps.changed-files.outputs.all_changed_files, ' ') }} | cs2pr
       if: steps.changed-files.outputs.all_changed_files != ''
+      run: vendor/bin/phpcs -q --report=checkstyle ${{ join(steps.changed-files.outputs.all_changed_files, ' ') }} | cs2pr
 
     - name: Run Stylelint
-      uses: Humanoidfr/action-stylelint@master
       if: steps.changed-files.outputs.all_changed_files != ''
+      uses: reviewdog/action-stylelint@v1
       with:
         github_token: ${{ secrets.token }}
-        ssh_key: ${{ secrets.private-key }}
         reporter: github-pr-review
         filter_mode: diff_context
         fail_on_error: true
-        packages: 'stylelint-scss stylelint-config-standard'
         stylelint_input: '**/*.scss'
         stylelint_config: './.stylelintrc'
 
