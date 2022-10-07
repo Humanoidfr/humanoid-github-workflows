@@ -73,9 +73,9 @@ jobs:
           cd /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }} && composer install -n
         shell: bash
 
-      - name: Run all Unit/Integration tests
-        id: unit-tests
-        run: /var/www/vendor/bin/exec-all-tests.sh /var/www/wordpress ci
+      # - name: Run all Unit/Integration tests
+      #   id: unit-tests
+      #   run: /var/www/vendor/bin/exec-all-tests.sh /var/www/wordpress ci
 
       - name: Generate coverage report
         uses: php-actions/phpunit@v3
