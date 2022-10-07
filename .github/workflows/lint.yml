@@ -62,11 +62,10 @@ jobs:
         stylelint_config: './.stylelintrc'
 
     - name: Run ESlint
-      uses: Humanoidfr/action-eslint@master
+      uses: reviewdog/action-eslint@v1
       if: steps.changed-files.outputs.all_changed_files != ''
       with:
         github_token: ${{ secrets.token }}
-        ssh_key: ${{ secrets.private-key }}
         reporter: github-pr-review
         filter_mode: diff_context
         fail_on_error: true
