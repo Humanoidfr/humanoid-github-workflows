@@ -6,7 +6,7 @@ on:
         required: true
         type: string
       type:
-        description: 'plugins|themes'
+        description: 'mu-plugins|plugins|themes'
         type: string
         required: true
     secrets:
@@ -61,7 +61,7 @@ jobs:
           path: .github/actions/humanoid-ci
 
       - name: "Checkout repositories to current branch"
-        run: ./.github/actions/humanoid-ci/scripts/checkout.sh
+        run: ./.github/actions/humanoid-ci/scripts/checkout.sh ${{ inputs.type }}
         shell: bash
 
       - name: Setup current repository
@@ -69,7 +69,7 @@ jobs:
           rm -rf /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }}
           mv ${{ github.event.repository.name }}-${{ github.run_id }}-${{ github.run_number }} /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }}
           chown -R root:root /var/www/
-          cd /var/www/wordpress/wp-content/mu-plugins/humanoid-core && composer install -n
+          [[ "${{ github.event.repository.name }}" != "humanoid-core" ]]  && cd /var/www/wordpress/wp-content/mu-plugins/humanoid-core && composer install -n
           cd /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }} && composer install -n
         shell: bash
 
