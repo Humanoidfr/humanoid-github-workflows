@@ -12,7 +12,7 @@ on:
     secrets:
       token:
         required: true
-      codecov_token:
+      codecov-token:
         required: true
       private-key:
         required: true
