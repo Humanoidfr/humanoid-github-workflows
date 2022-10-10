@@ -12,6 +12,8 @@ on:
     secrets:
       token:
         required: true
+      codecov_token:
+        required: true
       private-key:
         required: true
       docker-username:
@@ -61,7 +63,7 @@ jobs:
           path: .github/actions/humanoid-ci
 
       - name: "Checkout repositories to current branch"
-        run: ./.github/actions/humanoid-ci/scripts/checkout.sh ${{ inputs.type }}
+        run: ./.github/actions/humanoid-ci/scripts/checkout.sh ${{ inputs.type }} ${{ github.event.repository.name }}
         shell: bash
 
       - name: Setup current repository
@@ -87,6 +89,6 @@ jobs:
       - name: Upload to Codecov
         uses: codecov/codecov-action@v2
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ secrets.codecov_token }}
           files: /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }}/coverage.xml
           verbose: true
