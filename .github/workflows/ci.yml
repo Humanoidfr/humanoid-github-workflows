@@ -77,12 +77,12 @@ jobs:
       #   id: unit-tests
       #   run: /var/www/vendor/bin/exec-all-tests.sh /var/www/wordpress ci
 
-      - name: Generate coverage report
+      - name: Generate coverage report of current repository
         env:
           XDEBUG_MODE: coverage
         run: |
           cd /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }}
-          ./vendor/bin/phpunit --coverage-clover=coverage.xml
+          ./vendor/bin/phpunit tests --coverage-clover=coverage.xml
 
       - name: Upload to Codecov
         uses: codecov/codecov-action@v2
