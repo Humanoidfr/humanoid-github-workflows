@@ -66,7 +66,7 @@ jobs:
 
       - name: Setup current repository
         run: |
-          mv /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }} ${{ github.event.repository.name }}_old
+          mv /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }} ${{ github.event.repository.name }}-${{ github.run_id }}-${{ github.run_number }}_old
           mv ${{ github.event.repository.name }}-${{ github.run_id }}-${{ github.run_number }} /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }}
           chown -R root:root /var/www/
           [[ "${{ github.event.repository.name }}" != "humanoid-core" ]]  && cd /var/www/wordpress/wp-content/mu-plugins/humanoid-core && composer install -n --no-scripts
