@@ -75,10 +75,6 @@ jobs:
           cd /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }} && composer install -n --no-scripts
         shell: bash
 
-      - name: Run all Unit/Integration tests
-        id: unit-tests
-        run: /var/www/vendor/bin/exec-all-tests.sh /var/www/wordpress ci
-
       - name: Generate & publish code coverage
         uses: paambaati/codeclimate-action@v3.0.0
         env:
@@ -89,3 +85,7 @@ jobs:
           coverageLocations: |
             /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }}/coverage.xml:clover
           workingDirectory: /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }}
+
+      - name: Run all Unit/Integration tests
+        id: unit-tests
+        run: /var/www/vendor/bin/exec-all-tests.sh /var/www/wordpress ci
