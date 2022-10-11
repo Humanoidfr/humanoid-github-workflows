@@ -83,10 +83,9 @@ jobs:
         uses: paambaati/codeclimate-action@v3.0.0
         env:
           XDEBUG_MODE: coverage
+          CC_TEST_REPORTER_ID: ${{ secrets.codeclimate-reporter-id }}
         with:
           coverageCommand: ./vendor/bin/phpunit tests --coverage-clover=coverage.xml
           coverageLocations: |
             /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }}/coverage.xml:clover
           workingDirectory: /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }}
-        env:
-          CC_TEST_REPORTER_ID: ${{ secrets.codeclimate-reporter-id }}
