@@ -79,16 +79,14 @@ jobs:
       #   id: unit-tests
       #   run: /var/www/vendor/bin/exec-all-tests.sh /var/www/wordpress ci
 
-      - name: Generate coverage report of current repository
+      - name: Generate & publish code coverage
+        uses: paambaati/codeclimate-action@v3.0.0
         env:
           XDEBUG_MODE: coverage
-        run: |
-          cd /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }}
-          ./vendor/bin/phpunit tests --coverage-clover=coverage.xml
-
-      - name: Publish code coverage
-        uses: paambaati/codeclimate-action@v3.0.0
         with:
+          coverageCommand: ./vendor/bin/phpunit tests --coverage-clover=coverage.xml
+          coverageLocations: |
+            /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }}/coverage.xml:clover
           workingDirectory: /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }}
         env:
           CC_TEST_REPORTER_ID: ${{ secrets.codeclimate-reporter-id }}
