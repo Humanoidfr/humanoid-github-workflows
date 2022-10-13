@@ -95,6 +95,7 @@ jobs:
         id: unit-tests
         run: /var/www/vendor/bin/exec-all-tests.sh /var/www/wordpress ci
   staging:
+    name: Deploy to staging
     needs: [tests]
     name: Deploy "${{ inputs.target }}"
     runs-on: self-hosted
@@ -107,11 +108,11 @@ jobs:
           path: .github/actions/humanoid-ci
 
       - name: Create/update "${{ inputs.target }}" staging environment
-        if: ${{ inputs.action == "create" || inputs.action == "update" }}
+        if: ${{ inputs.action == 'create' || inputs.action == 'update' }}
         run: |
           Create/update staging envionment
 
       - name: Delete "${{ inputs.target }}" staging environment
-        if: ${{  inputs.action == "delete" }}
+        if: ${{  inputs.action == 'delete' }}
         run: |
           delete staging envionment
