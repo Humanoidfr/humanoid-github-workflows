@@ -9,6 +9,11 @@ on:
         description: 'mu-plugins|plugins|themes'
         type: string
         required: true
+      action:
+        description: 'create|update|delete'
+        type: string
+        default: 'create'
+        required: true
     secrets:
       token:
         required: true
