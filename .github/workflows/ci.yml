@@ -103,7 +103,8 @@ jobs:
         run: /var/www/vendor/bin/exec-all-tests.sh /var/www/wordpress ci
   staging:
     name: Deploy Staging
-    if: ${{ inputs.name != '' }}
+    if: always() && ${{ inputs.name != '' }}
+    needs: [tests]
     runs-on: self-hosted
     steps:
       - name: Checkout Humanoid CI
