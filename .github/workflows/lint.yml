@@ -40,7 +40,7 @@ jobs:
         restore-keys: ${{ runner.os }}-composer-
 
     - name: Install dependencies
-      run: composer install --prefer-dist --no-scripts --no-progress
+      run: composer install --no-scripts --no-progress
 
     - name: Get changed files
       id: changed-files
