@@ -119,6 +119,7 @@ jobs:
         env:
           HUMANOID_TOKEN: ${{ secrets.staging-token }}
           MADMOIZELLE_TOKEN: ${{ secrets.staging-mad-token }}
+          IS_WOODY: true
         run: |
           python3 ./.github/actions/humanoid-ci/scripts/preprod.py clone ${{ inputs.target }} ${{ inputs.name }}
 
@@ -127,5 +128,6 @@ jobs:
         env:
           HUMANOID_TOKEN: ${{ secrets.staging-token }}
           MADMOIZELLE_TOKEN: ${{ secrets.staging-mad-token }}
+          IS_WOODY: true
         run: |
           python3 ./.github/actions/humanoid-ci/scripts/preprod.py delete ${{ inputs.target }} ${{ inputs.name }}
