@@ -111,11 +111,11 @@ jobs:
           path: .github/actions/humanoid-ci
 
       - name: Create/update "${{ inputs.name }}" ${{ inputs.target }} staging environment
-        if: ${{ inputs.action == 'opened' || inputs.action == 'reopened' || inputs.action == 'synchronize' }}
+        if: ${{ inputs.action == 'opened' || inputs.action == 'reopened' }}
         run: |
-          Create/update staging envionment
+          python3 ./.github/actions/humanoid-ci/scripts/preprod.py clone ${{ inputs.target }} ${{ inputs.name }}
 
       - name: Delete "${{ inputs.name }}" ${{ inputs.target }} staging environment
         if: ${{  inputs.action == 'closed' }}
         run: |
-          delete staging envionment
+          python3 ./.github/actions/humanoid-ci/scripts/preprod.py delete ${{ inputs.target }} ${{ inputs.name }}
