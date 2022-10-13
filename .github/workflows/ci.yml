@@ -19,7 +19,11 @@ on:
     secrets:
       token:
         required: true
-      codeclimate-reporter-id:
+      coverage-token:
+        required: true
+      staging-token:
+        required: true
+      staging-mad-token:
         required: true
       private-key:
         required: true
@@ -87,7 +91,7 @@ jobs:
         uses: paambaati/codeclimate-action@v3.0.0
         env:
           XDEBUG_MODE: coverage
-          CC_TEST_REPORTER_ID: ${{ secrets.codeclimate-reporter-id }}
+          CC_TEST_REPORTER_ID: ${{ secrets.coverage-token }}
         with:
           coverageCommand: ./vendor/bin/phpunit tests --coverage-clover=coverage.xml
           coverageLocations: |
@@ -112,10 +116,16 @@ jobs:
 
       - name: Create/update "${{ inputs.name }}" ${{ inputs.target }} staging environment
         if: ${{ inputs.action == 'opened' || inputs.action == 'reopened' }}
+        env:
+          HUMANOID_TOKEN: ${{ secrets.staging-token }}
+          MADMOIZELLE_TOKEN: ${{ secrets.staging-mad-token }}
         run: |
           python3 ./.github/actions/humanoid-ci/scripts/preprod.py clone ${{ inputs.target }} ${{ inputs.name }}
 
       - name: Delete "${{ inputs.name }}" ${{ inputs.target }} staging environment
         if: ${{  inputs.action == 'closed' }}
+        env:
+          HUMANOID_TOKEN: ${{ secrets.staging-token }}
+          MADMOIZELLE_TOKEN: ${{ secrets.staging-mad-token }}
         run: |
           python3 ./.github/actions/humanoid-ci/scripts/preprod.py delete ${{ inputs.target }} ${{ inputs.name }}
