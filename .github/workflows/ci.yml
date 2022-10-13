@@ -27,6 +27,7 @@ on:
 jobs:
   tests:
     name: Run tests
+    if: ${{  inputs.action != 'closed' }}
     runs-on: self-hosted
     timeout-minutes: 30
     container:
