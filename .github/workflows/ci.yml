@@ -9,6 +9,9 @@ on:
         description: 'mu-plugins|plugins|themes'
         type: string
         required: true
+      name:
+        type: string
+        default: ''
       action:
         description: 'opened|reopened|synchronize|closed'
         type: string
@@ -96,6 +99,7 @@ jobs:
         run: /var/www/vendor/bin/exec-all-tests.sh /var/www/wordpress ci
   staging:
     name: Deploy Staging
+    if: ${{  inputs.name != '' }}
     needs: [tests]
     runs-on: self-hosted
     steps:
@@ -106,12 +110,12 @@ jobs:
           token: ${{ secrets.token }}
           path: .github/actions/humanoid-ci
 
-      - name: Create/update "${{ inputs.target }}" staging environment
+      - name: Create/update "${{ inputs.name }}" ${{ inputs.target }} staging environment
         if: ${{ inputs.action == 'opened' || inputs.action == 'reopened' || inputs.action == 'synchronize' }}
         run: |
           Create/update staging envionment
 
-      - name: Delete "${{ inputs.target }}" staging environment
+      - name: Delete "${{ inputs.name }}" ${{ inputs.target }} staging environment
         if: ${{  inputs.action == 'closed' }}
         run: |
           delete staging envionment
