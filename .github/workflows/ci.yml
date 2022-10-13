@@ -95,7 +95,6 @@ jobs:
         id: unit-tests
         run: /var/www/vendor/bin/exec-all-tests.sh /var/www/wordpress ci
   staging:
-    name: Deploy to staging
     needs: [tests]
     name: Deploy "${{ inputs.target }}"
     runs-on: self-hosted
