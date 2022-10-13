@@ -12,7 +12,6 @@ on:
       action:
         description: 'create|update|delete'
         type: string
-        default: 'create'
         required: true
     secrets:
       token:
