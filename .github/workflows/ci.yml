@@ -104,7 +104,6 @@ jobs:
   staging:
     name: Deploy Staging
     if: ${{ inputs.name != '' }}
-    needs: [tests]
     runs-on: self-hosted
     steps:
       - name: Checkout Humanoid CI
