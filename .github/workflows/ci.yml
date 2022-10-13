@@ -10,7 +10,7 @@ on:
         type: string
         required: true
       action:
-        description: 'create|update|delete'
+        description: 'opened|reopened|synchronize|closed'
         type: string
         required: true
     secrets:
@@ -106,11 +106,11 @@ jobs:
           path: .github/actions/humanoid-ci
 
       - name: Create/update "${{ inputs.target }}" staging environment
-        if: ${{ inputs.action == 'create' || inputs.action == 'update' }}
+        if: ${{ inputs.action == 'opened' || inputs.action == 'reopened' || inputs.action == 'synchronize' }}
         run: |
           Create/update staging envionment
 
       - name: Delete "${{ inputs.target }}" staging environment
-        if: ${{  inputs.action == 'delete' }}
+        if: ${{  inputs.action == 'closed' }}
         run: |
           delete staging envionment
