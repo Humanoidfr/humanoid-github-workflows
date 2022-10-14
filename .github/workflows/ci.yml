@@ -2,7 +2,7 @@ name: CI
 on:
   workflow_call:
     inputs:
-      target:
+      targets:
         required: true
         type: string
       type:
@@ -37,8 +37,11 @@ jobs:
     if: ${{ inputs.action != 'closed' }}
     runs-on: self-hosted
     timeout-minutes: 30
+    strategy:
+      matrix:
+        target: ${{ fromJson(inputs.targets) }}
     container:
-      image: dockeregistry.humanoid.fr/${{ inputs.target }}:latest
+      image: dockeregistry.humanoid.fr/${{ matrix.target }}:latest
       options: --user root
       credentials:
         username: ${{ secrets.docker-username }}
@@ -59,7 +62,7 @@ jobs:
           service elasticsearch restart &> /dev/null;
       - name: Setup SSH
         run: |
-          echo "APP_WEBSITE=${{ inputs.target }}" >> $GITHUB_ENV
+          echo "APP_WEBSITE=${{ matrix.target }}" >> $GITHUB_ENV
           echo "APP_ENV=local" >> $GITHUB_ENV
           useradd -r -d $HOME -s /bin/bash -g root -G sudo -u 1001 ci
           echo "${{ secrets.private-key }}" > /tmp/sshkey
@@ -106,6 +109,9 @@ jobs:
     if: ${{ always() && inputs.name != '' }}
     needs: [tests]
     runs-on: self-hosted
+    strategy:
+      matrix:
+        target: ${{ fromJson(inputs.targets) }}
     steps:
       - name: Checkout Humanoid CI
         uses: actions/checkout@v2
@@ -114,20 +120,20 @@ jobs:
           token: ${{ secrets.token }}
           path: .github/actions/humanoid-ci
 
-      - name: Create/update "${{ inputs.name }}" ${{ inputs.target }} staging environment
+      - name: Create/update "${{ inputs.name }}" ${{ matrix.target }} staging environment
         if: ${{ inputs.action == 'opened' || inputs.action == 'reopened' }}
         env:
           HUMANOID_TOKEN: ${{ secrets.staging-token }}
           MADMOIZELLE_TOKEN: ${{ secrets.staging-mad-token }}
           IS_WOODY: true
         run: |
-          python3 ./.github/actions/humanoid-ci/scripts/preprod.py clone ${{ inputs.target }} ${{ inputs.name }}
+          python3 ./.github/actions/humanoid-ci/scripts/preprod.py clone ${{ matrix.target }} ${{ inputs.name }}
 
-      - name: Delete "${{ inputs.name }}" ${{ inputs.target }} staging environment
+      - name: Delete "${{ inputs.name }}" ${{ matrix.target }} staging environment
         if: ${{  inputs.action == 'closed' }}
         env:
           HUMANOID_TOKEN: ${{ secrets.staging-token }}
           MADMOIZELLE_TOKEN: ${{ secrets.staging-mad-token }}
           IS_WOODY: true
         run: |
-          python3 ./.github/actions/humanoid-ci/scripts/preprod.py delete ${{ inputs.target }} ${{ inputs.name }}
+          python3 ./.github/actions/humanoid-ci/scripts/preprod.py delete ${{ matrix.target }} ${{ inputs.name }}
