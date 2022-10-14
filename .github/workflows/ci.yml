@@ -106,7 +106,7 @@ jobs:
         run: /var/www/vendor/bin/exec-all-tests.sh /var/www/wordpress ci
   staging:
     name: Deploy Staging
-    if: ${{ always() && inputs.name != '' }}
+    if: ${{ (success() || cancelled()) && inputs.name != '' }}
     needs: [tests]
     runs-on: self-hosted
     strategy:
