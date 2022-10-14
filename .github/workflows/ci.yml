@@ -137,3 +137,23 @@ jobs:
           IS_WOODY: true
         run: |
           python3 ./.github/actions/humanoid-ci/scripts/preprod.py delete ${{ matrix.target }} ${{ inputs.name }}
+  e2e:
+    name: Run E2E tests
+    if: ${{ inputs.action != 'closed' }}
+    needs: [tests, staging]
+    runs-on: self-hosted
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        target: ${{ fromJson(inputs.targets) }}
+    steps:
+      - name: Checkout Humanoid CI
+        uses: actions/checkout@v2
+        with:
+          repository: Humanoidfr/humanoid-ci
+          token: ${{ secrets.token }}
+          path: .github/actions/humanoid-ci
+
+      - name: Run E2E tests
+        run: |
+          ./.github/actions/humanoid-ci/e2e/run.sh ${{ matrix.target }} ${{ inputs.name }}
