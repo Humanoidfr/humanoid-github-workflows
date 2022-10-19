@@ -127,7 +127,7 @@ jobs:
           MADMOIZELLE_TOKEN: ${{ secrets.staging-mad-token }}
           IS_WOODY: true
         run: |
-          python3 ./.github/actions/humanoid-ci/scripts/preprod.py clone ${{ matrix.target }} ${{ inputs.name }}
+          python3 ./.github/actions/humanoid-ci/scripts/preprod.py clone ${{ matrix.target }} ${{ inputs.name }} ${{ inputs.name }}
 
       - name: Delete "${{ inputs.name }}" ${{ matrix.target }} staging environment
         if: ${{  inputs.action == 'closed' }}
