@@ -35,15 +35,15 @@ jobs:
       id: changed-files
       uses: tj-actions/changed-files@v31
 
-    - name: "Check packge.json existence"
+    - name: Run PHPCS
+      if: steps.changed-files.outputs.all_changed_files != ''
+      run: vendor/bin/phpcs -q --report=checkstyle ${{ join(steps.changed-files.outputs.all_changed_files, ' ') }} | cs2pr
+
+    - name: "Check package.json existence"
       id: check_files
       uses: andstor/file-existence-action@v2
       with:
         files: "package.json"
-
-    - name: Run PHPCS
-      if: steps.changed-files.outputs.all_changed_files != ''
-      run: vendor/bin/phpcs -q --report=checkstyle ${{ join(steps.changed-files.outputs.all_changed_files, ' ') }} | cs2pr
 
     - name: Run Stylelint
       if: steps.changed-files.outputs.all_changed_files != '' && steps.check_files.outputs.files_exists == 'true'
