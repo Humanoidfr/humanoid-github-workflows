@@ -36,6 +36,7 @@ jobs:
       uses: tj-actions/changed-files@v31
 
     - name: "Check packge.json existence"
+      id: check_files
       uses: andstor/file-existence-action@v2
       with:
         files: "package.json"
