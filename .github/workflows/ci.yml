@@ -141,7 +141,7 @@ jobs:
 
       - name: Add staging environment URL to PR
         uses: mshick/add-pr-comment@v2
-        if: ${{  inputs.action == 'closed' }}
+        if: ${{ inputs.action == 'opened' || inputs.action == 'reopened' || inputs.action == 'synchronize' }}
         with:
           message-id: ${{ matrix.target }}
           repo-token: ${{ secrets.token }}
