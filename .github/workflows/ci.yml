@@ -131,7 +131,7 @@ jobs:
           python3 ./.github/actions/humanoid-ci/scripts/preprod.py clone ${{ matrix.target }} ${{ inputs.name }} ${{ inputs.name }}
 
       - name: Delete "${{ inputs.name }}" ${{ matrix.target }} staging environment
-        if: ${{  inputs.action == 'closed' }}
+        if: ${{ inputs.action == 'closed' }}
         env:
           HUMANOID_TOKEN: ${{ secrets.staging-token }}
           MADMOIZELLE_TOKEN: ${{ secrets.staging-mad-token }}
