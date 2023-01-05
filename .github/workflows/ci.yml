@@ -144,6 +144,7 @@ jobs:
         if: ${{  inputs.action == 'closed' }}
         with:
           message-id: ${{ matrix.target }}
+          repo-token: ${{ secrets.token }}
           message: |
             **${{ matrix.target }} staging URL**: https://staging-${{ inputs.name }}.${{ matrix.target }}.com
   e2e:
