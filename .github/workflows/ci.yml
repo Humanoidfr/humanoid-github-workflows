@@ -111,6 +111,7 @@ jobs:
     name: Deploy Staging
     if: ${{ always() && inputs.name != '' }}
     runs-on: self-hosted
+    timeout-minutes: 30
     strategy:
       matrix:
         target: ${{ fromJson(inputs.targets) }}
