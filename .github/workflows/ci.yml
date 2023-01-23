@@ -109,7 +109,7 @@ jobs:
         run: /var/www/vendor/bin/exec-all-tests.sh /var/www/wordpress ci
   staging:
     name: Deploy Staging
-    if: ${{ !cancelled() && inputs.name != '' && (success() || failure() || needs.tests.result == 'skipped') }}
+    if: ${{ always() && inputs.name != '' }}
     runs-on: self-hosted
     timeout-minutes: 30
     strategy:
