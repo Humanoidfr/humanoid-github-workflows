@@ -49,7 +49,7 @@ jobs:
       run: composer install -n --no-progress
 
     - name: Install NPM dependencies
-      if: steps.check_package.outputs.files_exists == 'true'
+      if: steps.check_package.outputs.files_exists == 'true' && steps.check_composer.outputs.files_exists == 'false'
       run: (npm ci -s || npm i -s)
 
     - name: Get changed files
