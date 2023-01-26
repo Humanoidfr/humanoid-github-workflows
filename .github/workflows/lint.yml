@@ -46,7 +46,7 @@ jobs:
 
     - name: Install PHP dependencies
       if: steps.check_composer.outputs.files_exists == 'true'
-      run: composer install -n --no-progress --no-scripts
+      run: composer install -n --no-progress
 
     - name: Install NPM dependencies
       if: steps.check_package.outputs.files_exists == 'true'
