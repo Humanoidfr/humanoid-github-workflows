@@ -94,6 +94,8 @@ jobs:
         shell: bash
 
       - name: Generate code coverage
+        env:
+          XDEBUG_MODE: coverage
         run: |
           cd /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }}
           ./vendor/bin/phpunit tests --coverage-cobertura=coverage.xml
