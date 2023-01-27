@@ -95,13 +95,14 @@ jobs:
 
       - name: Generate code coverage
         run: |
+          cd /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }}
           ./vendor/bin/phpunit tests --coverage-cobertura=coverage.xml
         shell: bash
 
       - name: Convert code coverage to markdown
         uses: irongut/CodeCoverageSummary@v1.3.0
         with:
-          filename: coverage.xml
+          filename: /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }}/coverage.xml
           badge: true
           format: 'markdown'
           output: 'both'
