@@ -149,7 +149,7 @@ jobs:
           MADMOIZELLE_TOKEN: ${{ secrets.staging-mad-token }}
           IS_WOODY: true
         run: |
-          python3 ./.github/actions/humanoid-ci/scripts/preprod.py clone ${{ matrix.target }} ${{ inputs.name }} ${{ inputs.name }} ${{ github.event.pull_request.html_url }} ${{ '${{github.event.pull_request.body}}' }} ${{ github.event.pull_request.user.avatar_url }}
+          python3 ./.github/actions/humanoid-ci/scripts/preprod.py clone ${{ matrix.target }} ${{ inputs.name }} ${{ inputs.name }} ${{ github.event.pull_request.html_url }} ${{ toJson(github.event.pull_request.body) }} ${{ github.event.pull_request.user.avatar_url }}
 
       - name: Delete "${{ inputs.name }}" ${{ matrix.target }} staging environment
         if: ${{ inputs.action == 'closed' }}
