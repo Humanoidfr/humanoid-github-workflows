@@ -86,7 +86,7 @@ jobs:
 
       - name: Generate base code coverage
         run: |
-          cd /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }} && composer install -n --no-scripts
+          cd /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }} && composer install -n --no-scripts --no-progress
           XDEBUG_MODE=coverage ./vendor/bin/phpunit --coverage-clover=coverage.xml
           cd - && cp /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }}/coverage.xml base-coverage.xml
         shell: bash
@@ -96,8 +96,8 @@ jobs:
           [ -f /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }} ] && mv /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }} ${{ github.event.repository.name }}-${{ github.run_id }}-${{ github.run_number }}_old
           mv ${{ github.event.repository.name }}-${{ github.run_id }}-${{ github.run_number }} /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }}
           chown -R root:root /var/www/
-          [[ "${{ github.event.repository.name }}" != "humanoid-core" ]]  && cd /var/www/wordpress/wp-content/mu-plugins/humanoid-core && composer install -n --no-scripts
-          cd /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }} && composer install -n --no-scripts
+          [[ "${{ github.event.repository.name }}" != "humanoid-core" ]]  && cd /var/www/wordpress/wp-content/mu-plugins/humanoid-core && composer install -n --no-scripts --no-progress
+          cd /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }} && composer install -n --no-scripts --no-progress
         shell: bash
 
       - name: Generate code coverage
@@ -112,6 +112,8 @@ jobs:
         with:
           file: coverage.xml
           base-file: base-coverage.xml
+          with-chart: false
+          show-percentage-change-on-table: true
 
       - name: Run all Unit/Integration tests
         id: unit-tests
