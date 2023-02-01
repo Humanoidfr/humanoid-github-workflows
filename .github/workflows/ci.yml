@@ -6,7 +6,7 @@ on:
         required: true
         type: string
       type:
-        description: 'mu-plugins|plugins|themes'
+        description: 'mu-plugins|plugins|themes|base'
         type: string
         required: true
       name:
@@ -34,7 +34,7 @@ on:
 jobs:
   tests:
     name: Run tests
-    if: ${{ inputs.action != 'closed' }}
+    if: ${{ inputs.action != 'closed' && inputs.type != 'base' }}
     runs-on: self-hosted
     timeout-minutes: 30
     permissions:
@@ -170,7 +170,7 @@ jobs:
             **${{ matrix.target }} staging URL**: https://staging-${{ inputs.name }}.${{ matrix.target }}.com
   e2e:
     name: Run E2E tests
-    if: ${{ inputs.action != 'closed' }}
+    if: ${{ inputs.action != 'closed' && inputs.type != 'base' }}
     needs: [tests, staging]
     runs-on: self-hosted
     timeout-minutes: 30
