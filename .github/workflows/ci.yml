@@ -86,11 +86,10 @@ jobs:
 
       - name: Generate base code coverage
         run: |
-          cd /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }}
-          composer install -n --no-scripts
-          XDEBUG_MODE=coverage ./vendor/bin/phpunit --coverage-clover=coverage.xml
-          cd -
-          cp /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }}/coverage.xml base-coverage.xml
+          [ -f /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }} ] && cd /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }}
+          [ -f composer.json ] && composer install -n --no-scripts
+          [ -f ./vendor/bin/phpunit] && XDEBUG_MODE=coverage ./vendor/bin/phpunit --coverage-clover=coverage.xml
+          [ -f /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }} ] && cd - && cp /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }}/coverage.xml base-coverage.xml
         shell: bash
 
       - name: Setup current repository
