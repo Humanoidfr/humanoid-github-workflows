@@ -20,7 +20,7 @@ on:
       token:
         required: true
       coverage-token:
-        required: true
+        required: false
       staging-token:
         required: true
       staging-mad-token:
@@ -84,6 +84,14 @@ jobs:
         run: ./.github/actions/humanoid-ci/scripts/checkout.sh ${{ inputs.type }} ${{ github.event.repository.name }}
         shell: bash
 
+      - name: Generate base code coverage
+        run: |
+          cd /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }}
+          XDEBUG_MODE=coverage ./vendor/bin/phpunit --coverage-clover=coverage.xml
+          cd -
+          cp /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }}/coverage.xml base-coverage.xml
+        shell: bash
+
       - name: Setup current repository
         run: |
           [ -f /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }} ] && mv /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }} ${{ github.event.repository.name }}-${{ github.run_id }}-${{ github.run_number }}_old
@@ -96,32 +104,16 @@ jobs:
       - name: Generate code coverage
         run: |
           cd /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }}
-          XDEBUG_MODE=coverage ./vendor/bin/phpunit tests --coverage-cobertura=coverage.xml
-        shell: bash
-
-      - name: Copy coverage
-        run: |
+          XDEBUG_MODE=coverage ./vendor/bin/phpunit --coverage-clover=coverage.xml
+          cd -
           cp /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }}/coverage.xml coverage.xml
         shell: bash
 
-      - name: Convert code coverage to markdown
-        uses: irongut/CodeCoverageSummary@v1.3.0
-        with:
-          filename: coverage.xml
-          badge: true
-          format: 'markdown'
-          output: 'both'
-
       - name: Add Coverage to PR
-        uses: marocchino/sticky-pull-request-comment@v2
-        if: ${{ inputs.action == 'opened' || inputs.action == 'reopened' || inputs.action == 'synchronize' }}
+        uses: lucassabreu/comment-coverage-clover@main
         with:
-          header: test
-          recreate: true
-          path: code-coverage-results.md
-
-      - name: Write to Job Summary
-        run: cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
+          file: coverage.xml
+          base-file: base-coverage.xml
 
       - name: Run all Unit/Integration tests
         id: unit-tests
