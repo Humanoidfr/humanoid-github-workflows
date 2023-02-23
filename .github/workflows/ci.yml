@@ -74,7 +74,7 @@ jobs:
       if: steps.check_composer.outputs.files_exists == 'true'
       run: |
         NO_UPDATE_BIN=1 composer install -n --no-progress
-        composer require staabm/annotate-pull-request-from-checkstyle --dev -n --no-progress --no-audit
+        NO_UPDATE_BIN=1 composer require staabm/annotate-pull-request-from-checkstyle --dev -n --no-progress --no-audit
 
     - name: Install NPM dependencies
       if: steps.check_package.outputs.files_exists == 'true' && steps.check_composer.outputs.files_exists == 'false'
