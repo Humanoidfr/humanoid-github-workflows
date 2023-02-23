@@ -70,10 +70,10 @@ jobs:
       with:
         files: "package.json"
 
-    - name: Install PHP dependencies
+    - name: Install PHP dev dependencies
       if: steps.check_composer.outputs.files_exists == 'true'
       run: |
-        composer install --dev -n --no-progress
+        composer require humanoid/humanoid-theme-base:dev-phpcs-config -n --no-progress
         composer require staabm/annotate-pull-request-from-checkstyle -n --no-progress
 
     - name: Install NPM dependencies
