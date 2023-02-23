@@ -19,8 +19,6 @@ on:
     secrets:
       token:
         required: true
-      coverage-token:
-        required: false
       staging-token:
         required: true
       staging-mad-token:
