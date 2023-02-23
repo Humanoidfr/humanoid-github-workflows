@@ -73,8 +73,8 @@ jobs:
     - name: Install PHP dev dependencies
       if: steps.check_composer.outputs.files_exists == 'true'
       run: |
-        composer require humanoid/humanoid-theme-base:dev-phpcs-config --dev --no-update -n --no-progress --no-audit
-        composer require staabm/annotate-pull-request-from-checkstyle --dev --no-update -n --no-progress --no-audit
+        composer require humanoid/humanoid-theme-base:dev-phpcs-config --dev -n --no-progress --no-audit
+        composer require staabm/annotate-pull-request-from-checkstyle --dev -n --no-progress --no-audit
 
     - name: Install NPM dependencies
       if: steps.check_package.outputs.files_exists == 'true' && steps.check_composer.outputs.files_exists == 'false'
