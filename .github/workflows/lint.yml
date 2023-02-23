@@ -36,17 +36,11 @@ jobs:
       with:
         files: "package.json"
 
-    - name: Setup PHP
-      if: steps.check_composer.outputs.files_exists == 'true'
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '8.1'
-        coverage: none
-        tools: composer, cs2pr
-
     - name: Install PHP dependencies
       if: steps.check_composer.outputs.files_exists == 'true'
-      run: composer install -n --no-progress
+      run: |
+        composer install -n --no-progress
+        composer require staabm/annotate-pull-request-from-checkstyle --dev -n --no-progress
 
     - name: Install NPM dependencies
       if: steps.check_package.outputs.files_exists == 'true' && steps.check_composer.outputs.files_exists == 'false'
