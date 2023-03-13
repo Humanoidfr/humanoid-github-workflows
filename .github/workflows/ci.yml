@@ -148,6 +148,7 @@ jobs:
           chmod 600 /tmp/sshkey
           chown ci:root /tmp/sshkey
           echo "GIT_SSH_COMMAND=ssh -i /tmp/sshkey -o StrictHostKeyChecking=no" >> $GITHUB_ENV
+          git config --global --add safe.directory '*'
 
       - name: Checkout Humanoid CI
         uses: actions/checkout@v2
