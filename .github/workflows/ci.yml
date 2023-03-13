@@ -75,7 +75,7 @@ jobs:
       if: steps.check_composer.outputs.files_exists == 'true'
       run: |
         PATH=$PATH:/var/ci-env composer update -n --no-progress
-        PATH=$PATH:/var/ci-env composer require staabm/annotate-pull-request-from-checkstyle -n --no-progress --no-audit
+        composer global require staabm/annotate-pull-request-from-checkstyle -n --no-progress --no-audit
 
     - name: Install NPM dependencies
       if: steps.check_package.outputs.files_exists == 'true' && steps.check_composer.outputs.files_exists == 'false'
@@ -87,7 +87,7 @@ jobs:
 
     - name: Run PHPCS
       if: steps.changed-files.outputs.all_changed_files != '' && steps.check_composer.outputs.files_exists == 'true'
-      run: vendor/bin/phpcs -q --report=checkstyle ${{ join(steps.changed-files.outputs.all_changed_files, ' ') }} | vendor/bin/cs2pr
+      run: vendor/bin/phpcs -q --report=checkstyle ${{ join(steps.changed-files.outputs.all_changed_files, ' ') }} | $(composer config -g home)/vendor/bin/cs2pr
 
     - name: Run Stylelint
       if: steps.changed-files.outputs.all_changed_files != '' && steps.check_package.outputs.files_exists == 'true'
