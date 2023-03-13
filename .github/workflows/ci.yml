@@ -161,6 +161,7 @@ jobs:
         shell: bash
 
       - name: Generate base code coverage
+        if: ${{ github.event_name == 'pull_request' }}
         run: |
           cd /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }} && composer install -n --no-scripts --no-progress
           XDEBUG_MODE=coverage ./vendor/bin/phpunit --coverage-clover=coverage.xml
@@ -184,6 +185,7 @@ jobs:
         shell: bash
 
       - name: Add Coverage to PR
+        if: ${{ github.event_name == 'pull_request' }}
         uses: lucassabreu/comment-coverage-clover@main
         with:
           file: coverage.xml
