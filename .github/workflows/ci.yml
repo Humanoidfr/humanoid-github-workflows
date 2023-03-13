@@ -75,7 +75,7 @@ jobs:
       if: steps.check_composer.outputs.files_exists == 'true'
       run: |
         PATH=$PATH:/var/ci-env composer update -n --no-progress
-        PATH=$PATH:/var/ci-env composer require staabm/annotate-pull-request-from-checkstyle --dev -n --no-progress --no-audit
+        PATH=$PATH:/var/ci-env composer require staabm/annotate-pull-request-from-checkstyle --dev -n --no-update --no-progress --no-audit
 
     - name: Install NPM dependencies
       if: steps.check_package.outputs.files_exists == 'true' && steps.check_composer.outputs.files_exists == 'false'
