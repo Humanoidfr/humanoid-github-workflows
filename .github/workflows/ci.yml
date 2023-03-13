@@ -73,7 +73,7 @@ jobs:
     - name: Install PHP dev dependencies
       if: steps.check_composer.outputs.files_exists == 'true'
       run: |
-        PATH=$PATH:/var/ci-env composer install -n --no-progress
+        PATH=$PATH:/var/ci-env composer update -n --no-progress
         PATH=$PATH:/var/ci-env composer require staabm/annotate-pull-request-from-checkstyle --dev -n --no-progress --no-audit
 
     - name: Install NPM dependencies
@@ -164,7 +164,7 @@ jobs:
       - name: Generate base code coverage
         if: ${{ github.event_name == 'pull_request' }}
         run: |
-          cd /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }} && composer install -n --no-scripts --no-progress
+          cd /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }} && composer update -n --no-scripts --no-progress
           XDEBUG_MODE=coverage ./vendor/bin/phpunit --coverage-clover=coverage.xml
           cd - && cp /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }}/coverage.xml base-coverage.xml
         shell: bash
@@ -174,8 +174,8 @@ jobs:
           [ -f /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }} ] && mv /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }} ${{ github.event.repository.name }}-${{ github.run_id }}-${{ github.run_number }}_old
           mv ${{ github.event.repository.name }}-${{ github.run_id }}-${{ github.run_number }} /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }}
           chown -R root:root /var/www/
-          [[ "${{ github.event.repository.name }}" != "humanoid-core" ]]  && cd /var/www/wordpress/wp-content/mu-plugins/humanoid-core && composer install -n --no-scripts --no-progress
-          cd /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }} && composer install -n --no-scripts --no-progress
+          [[ "${{ github.event.repository.name }}" != "humanoid-core" ]]  && cd /var/www/wordpress/wp-content/mu-plugins/humanoid-core && composer update -n --no-scripts --no-progress
+          cd /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }} && composer update -n --no-scripts --no-progress
         shell: bash
 
       - name: Generate code coverage
