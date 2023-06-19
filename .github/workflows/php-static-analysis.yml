@@ -1,0 +1,32 @@
+name: PHP Coding Standards
+
+on:
+  workflow_call:
+    inputs:
+      php:
+        default: 8.1
+        required: false
+        type: number
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    name: phpcs ${{ inputs.php }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ inputs.php }}
+          tools: composer, cs2pr
+          coverage: none
+
+      - name: Install dependencies
+        uses: ramsey/composer-install@v2
+        with:
+          composer-options: "--no-progress --no-ansi --no-interaction --prefer-dist"
+
+      - name: Run phpcs
+        run: composer run cs
