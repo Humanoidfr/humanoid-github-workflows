@@ -52,17 +52,17 @@ jobs:
       - run: |
             cat $(composer -n config --global home)/config.json
 
-    #   - name: Validate composer.json and composer.lock
-    #     run: composer validate
+      - name: Validate composer.json and composer.lock
+        run: composer validate
 
-    #   - name: Install Composer dependencies
-    #     uses: ramsey/composer-install@v2
-    #     with:
-    #       composer-options: ${{ inputs.COMPOSER_ARGS }}
+      - name: Install Composer dependencies
+        uses: ramsey/composer-install@v2
+        with:
+          composer-options: ${{ inputs.COMPOSER_ARGS }}
 
-    #   - name: Run PHP_CodeSniffer
-    #     run: ./vendor/bin/phpcs ${{ inputs.PHPCS_ARGS }}
+      - name: Run PHP_CodeSniffer
+        run: ./vendor/bin/phpcs ${{ inputs.PHPCS_ARGS }}
 
-    #   - name: Annotate PHP_CodeSniffer report
-    #     if: ${{ always() }}
-    #     run: cs2pr ${{ inputs.CS2PR_ARGS }}
+      - name: Annotate PHP_CodeSniffer report
+        if: ${{ always() }}
+        run: cs2pr ${{ inputs.CS2PR_ARGS }}
