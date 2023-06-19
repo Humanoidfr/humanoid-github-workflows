@@ -53,7 +53,9 @@ jobs:
         env:
           COMPOSER_CONFIG: ${{ secrets.COMPOSER_CONFIG_JSON }}
 
-      - run: cat $HOME/.composer/config.json
+      - run: |
+            cat $HOME/.composer/config.json
+            composer -n config --global home
 
     #   - name: Validate composer.json and composer.lock
     #     run: composer validate
