@@ -27,12 +27,16 @@ on:
       COMPOSER_AUTH_JSON:
         description: Authentication for privately hosted packages and repositories as a JSON formatted object.
         required: false
+      COMPOSER_CONFIG_JSON:
+        description: Global composer config as a JSON formatted object.
+        required: false
 
 jobs:
   phpcoding-standards:
     runs-on: ubuntu-latest
     env:
       COMPOSER_AUTH: "${{ secrets.COMPOSER_AUTH_JSON }}"
+      COMPOSER_CONFIG: "${{ secrets.COMPOSER_CONFIG }}"
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -43,6 +47,9 @@ jobs:
           php-version: ${{ inputs.PHP_VERSION }}
           tools: composer, cs2pr
           coverage: none
+
+      - name: Set Composer global config
+        run: echo "${{ secrets.COMPOSER_CONFIG_JSON }}" > $HOME/.composer/config.json
 
       - name: Validate composer.json and composer.lock
         run: composer validate
