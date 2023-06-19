@@ -27,9 +27,6 @@ on:
       COMPOSER_AUTH_JSON:
         description: Authentication for privately hosted packages and repositories as a JSON formatted object.
         required: false
-      COMPOSER_CONFIG_JSON:
-        description: Global composer config as a JSON formatted object.
-        required: false
 
 jobs:
   php-coding-standards:
@@ -47,14 +44,14 @@ jobs:
           tools: composer, cs2pr
           coverage: none
 
-      - name: Set Composer global config
-        shell: bash
-        run: 'echo "$COMPOSER_CONFIG" > $HOME/.composer/config.json'
-        env:
-          COMPOSER_CONFIG: ${{ secrets.COMPOSER_CONFIG_JSON }}
+    #   - name: Set Composer global config
+    #     shell: bash
+    #     run: 'echo "$COMPOSER_CONFIG" > $HOME/.composer/config.json'
+    #     env:
+    #       COMPOSER_CONFIG: ${{ secrets.COMPOSER_CONFIG_JSON }}
 
       - run: |
-            cat $HOME/.composer/config.json
+            echo $COMPOSER_CONFIG
             composer -n config --global home
 
     #   - name: Validate composer.json and composer.lock
