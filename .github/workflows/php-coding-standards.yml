@@ -49,7 +49,7 @@ jobs:
           coverage: none
 
       - name: Set Composer global config
-        run: echo "${{ secrets.COMPOSER_CONFIG_JSON }}" > $HOME/.composer/config.json
+        run: echo $COMPOSER_CONFIG > $HOME/.composer/config.json
 
       - name: Validate composer.json and composer.lock
         run: composer validate
