@@ -1,0 +1,60 @@
+name: PHP Coding standards
+
+on:
+  workflow_call:
+    inputs:
+      PHP_VERSION:
+        description: PHP version with which the coding standard analysis is to be executed.
+        default: "8.1"
+        required: false
+        type: string
+      COMPOSER_ARGS:
+        description: Set of arguments passed to Composer.
+        default: "--prefer-dist"
+        required: false
+        type: string
+      PHPCS_ARGS:
+        description: Set of arguments passed to PHP_CodeSniffer.
+        default: "--report-full --report-checkstyle=./phpcs-report.xml"
+        required: false
+        type: string
+      CS2PR_ARGS:
+        description: Set of arguments passed to cs2pr.
+        default: "--graceful-warnings ./phpcs-report.xml"
+        required: false
+        type: string
+    secrets:
+      COMPOSER_AUTH_JSON:
+        description: Authentication for privately hosted packages and repositories as a JSON formatted object.
+        required: false
+
+jobs:
+  phpcoding-standards:
+    runs-on: ubuntu-latest
+    env:
+      COMPOSER_AUTH: "${{ secrets.COMPOSER_AUTH_JSON }}"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ inputs.PHP_VERSION }}
+          tools: composer, cs2pr
+          coverage: none
+
+      - name: Validate composer.json and composer.lock
+        run: composer validate
+
+      - name: Install Composer dependencies
+        uses: ramsey/composer-install@v2
+        with:
+          composer-options: ${{ inputs.COMPOSER_ARGS }}
+
+      - name: Run PHP_CodeSniffer
+        run: ./vendor/bin/phpcs ${{ inputs.PHPCS_ARGS }}
+
+      - name: Annotate PHP_CodeSniffer report
+        if: ${{ always() }}
+        run: cs2pr ${{ inputs.CS2PR_ARGS }}
