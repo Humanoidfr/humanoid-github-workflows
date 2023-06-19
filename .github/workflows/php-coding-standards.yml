@@ -51,7 +51,7 @@ jobs:
     #       COMPOSER_CONFIG: ${{ secrets.COMPOSER_CONFIG_JSON }}
 
       - run: |
-            echo $COMPOSER_CONFIG
+            echo ${{ env.COMPOSER_CONFIG }}
             composer -n config --global home
 
     #   - name: Validate composer.json and composer.lock
