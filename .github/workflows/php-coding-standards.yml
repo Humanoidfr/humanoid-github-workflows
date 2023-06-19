@@ -44,17 +44,13 @@ jobs:
           tools: composer, cs2pr
           coverage: none
 
-    #   - name: Set Composer global config
-    #     shell: bash
-    #     run: 'echo "$COMPOSER_CONFIG" > $HOME/.composer/config.json'
-    #     env:
-    #       COMPOSER_CONFIG: ${{ secrets.COMPOSER_CONFIG_JSON }}
-
-      - run: |
-            echo $COMPOSER_CONFIG
-            composer -n config --global home
+      - name: Set Composer global config
+        run: echo $COMPOSER_CONFIG > $(composer -n config --global home)/config.json
         env:
             COMPOSER_CONFIG: ${{ vars.COMPOSER_CONFIG_JSON }}
+
+      - run: |
+            cat $(composer -n config --global home)/config.json
 
     #   - name: Validate composer.json and composer.lock
     #     run: composer validate
