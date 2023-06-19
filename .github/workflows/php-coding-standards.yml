@@ -51,7 +51,7 @@ jobs:
         shell: bash
         run: 'echo "$COMPOSER_CONFIG" > $HOME/.composer/config.json'
         env:
-            COMPOSER_CONFIG: ${{ secrets.COMPOSER_CONFIG_JSON }}
+          COMPOSER_CONFIG: ${{ secrets.COMPOSER_CONFIG_JSON }}
 
       - run: cat $HOME/.composer/config.json
 
