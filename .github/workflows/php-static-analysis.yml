@@ -10,7 +10,7 @@ on:
         type: string
       COMPOSER_ARGS:
         description: Set of arguments passed to Composer.
-        default: '--prefer-dist'
+        default: '--prefer-dist --no-scripts'
         required: false
         type: string
       PHPSTAN_ARGS:
