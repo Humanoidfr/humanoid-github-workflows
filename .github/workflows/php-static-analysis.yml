@@ -1,32 +1,64 @@
-name: PHP Coding Standards
+name: PHP Static analysis
 
 on:
   workflow_call:
     inputs:
-      php:
-        default: 8.1
+      PHP_VERSION:
+        description: PHP version with which the static code analysis is to be executed.
+        default: "8.1"
         required: false
-        type: number
+        type: string
+      COMPOSER_ARGS:
+        description: Set of arguments passed to Composer.
+        default: '--prefer-dist'
+        required: false
+        type: string
+      PHPSTAN_ARGS:
+        description: Set of arguments passed to PHPStan.
+        default: '--error-format=checkstyle'
+        required: false
+        type: string
+    secrets:
+      COMPOSER_AUTH_JSON:
+        description: Authentication for privately hosted packages and repositories as a JSON formatted object.
+        required: false
 
 jobs:
-  tests:
+  php-static-analysis:
+    name: PHP Static analysis
     runs-on: ubuntu-latest
-    name: phpcs ${{ inputs.php }}
+    env:
+      COMPOSER_AUTH: '${{ secrets.COMPOSER_AUTH_JSON }}'
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
-      - name: Setup PHP
+      - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: ${{ inputs.php }}
+          php-version: ${{ inputs.PHP_VERSION }}
           tools: composer, cs2pr
           coverage: none
 
-      - name: Install dependencies
+      - name: Set Composer global config
+        run: echo $COMPOSER_CONFIG > $(composer -n config --global home)/config.json
+        env:
+          COMPOSER_CONFIG: ${{ vars.COMPOSER_CONFIG_JSON }}
+
+      - name: Validate composer.json and composer.lock
+        run: composer validate
+
+      - name: Install Composer dependencies
         uses: ramsey/composer-install@v2
         with:
-          composer-options: "--no-progress --no-ansi --no-interaction --prefer-dist"
+          composer-options: ${{ inputs.COMPOSER_ARGS }}
 
-      - name: Run phpcs
-        run: composer run cs
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v36
+
+      - name: Run PHPStan
+        if: steps.changed-files.outputs.all_changed_files != ''
+        run: ./vendor/bin/phpstan analyse ${{ inputs.PHPSTAN_ARGS }} ${{ join(steps.changed-files.outputs.all_changed_files, ' ') }} | cs2pr
