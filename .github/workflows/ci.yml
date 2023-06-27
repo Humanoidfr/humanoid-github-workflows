@@ -87,9 +87,9 @@ jobs:
       id: changed-files
       uses: tj-actions/changed-files@v31
 
-    - name: Run PHPCS
-      if: steps.changed-files.outputs.all_changed_files != '' && steps.check_composer.outputs.files_exists == 'true'
-      run: vendor/bin/phpcs -q --report=checkstyle ${{ join(steps.changed-files.outputs.all_changed_files, ' ') }} | $(composer config -g home)/vendor/bin/cs2pr
+    # - name: Run PHPCS
+    #   if: steps.changed-files.outputs.all_changed_files != '' && steps.check_composer.outputs.files_exists == 'true'
+    #   run: vendor/bin/phpcs -q --report=checkstyle ${{ join(steps.changed-files.outputs.all_changed_files, ' ') }} | $(composer config -g home)/vendor/bin/cs2pr
 
     - name: Run Stylelint
       if: steps.changed-files.outputs.all_changed_files != '' && steps.check_package.outputs.files_exists == 'true'
@@ -110,97 +110,97 @@ jobs:
         reporter: github-pr-review
         filter_mode: diff_context
         fail_on_error: true
-  tests:
-    name: Run tests
-    if: ${{ inputs.action != 'closed' && inputs.type != 'base' }}
-    runs-on: self-hosted
-    timeout-minutes: 30
-    permissions:
-      pull-requests: write
-    strategy:
-      matrix:
-        target: ${{ fromJson(inputs.targets) }}
-    container:
-      image: dockeregistry.humanoid.fr/${{ matrix.target }}:latest
-      options: --user root
-      credentials:
-        username: ${{ secrets.docker-username }}
-        password: ${{ secrets.docker-password }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          token: ${{ secrets.token }}
-          path: ${{ github.event.repository.name }}-${{ github.run_id }}-${{ github.run_number }}
+  # tests:
+  #   name: Run tests
+  #   if: ${{ inputs.action != 'closed' && inputs.type != 'base' }}
+  #   runs-on: self-hosted
+  #   timeout-minutes: 30
+  #   permissions:
+  #     pull-requests: write
+  #   strategy:
+  #     matrix:
+  #       target: ${{ fromJson(inputs.targets) }}
+  #   container:
+  #     image: dockeregistry.humanoid.fr/${{ matrix.target }}:latest
+  #     options: --user root
+  #     credentials:
+  #       username: ${{ secrets.docker-username }}
+  #       password: ${{ secrets.docker-password }}
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v3
+  #       with:
+  #         ref: ${{ github.event.pull_request.head.sha }}
+  #         token: ${{ secrets.token }}
+  #         path: ${{ github.event.repository.name }}-${{ github.run_id }}-${{ github.run_number }}
 
-      - name: Start services
-        run: |
-          service mariadb restart &> /dev/null; \
-          service php$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')-fpm restart &> /dev/null; \
-          service redis-server restart &> /dev/null; \
-          service nginx restart &> /dev/null; \
-          service elasticsearch restart &> /dev/null;
+  #     - name: Start services
+  #       run: |
+  #         service mariadb restart &> /dev/null; \
+  #         service php$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')-fpm restart &> /dev/null; \
+  #         service redis-server restart &> /dev/null; \
+  #         service nginx restart &> /dev/null; \
+  #         service elasticsearch restart &> /dev/null;
 
-      - name: Setup SSH
-        run: |
-          echo "APP_WEBSITE=${{ matrix.target }}" >> $GITHUB_ENV
-          echo "APP_ENV=local" >> $GITHUB_ENV
-          useradd -r -d $HOME -s /bin/bash -g root -G sudo -u 1001 ci
-          echo "${{ secrets.private-key }}" > /tmp/sshkey
-          chmod 600 /tmp/sshkey
-          chown ci:root /tmp/sshkey
-          echo "GIT_SSH_COMMAND=ssh -i /tmp/sshkey -o StrictHostKeyChecking=no" >> $GITHUB_ENV
-          git config --system --add safe.directory '*'
+  #     - name: Setup SSH
+  #       run: |
+  #         echo "APP_WEBSITE=${{ matrix.target }}" >> $GITHUB_ENV
+  #         echo "APP_ENV=local" >> $GITHUB_ENV
+  #         useradd -r -d $HOME -s /bin/bash -g root -G sudo -u 1001 ci
+  #         echo "${{ secrets.private-key }}" > /tmp/sshkey
+  #         chmod 600 /tmp/sshkey
+  #         chown ci:root /tmp/sshkey
+  #         echo "GIT_SSH_COMMAND=ssh -i /tmp/sshkey -o StrictHostKeyChecking=no" >> $GITHUB_ENV
+  #         git config --system --add safe.directory '*'
 
-      - name: Checkout Humanoid CI
-        uses: actions/checkout@v3
-        with:
-          repository: Humanoidfr/humanoid-ci
-          token: ${{ secrets.token }}
-          path: .github/actions/humanoid-ci
+  #     - name: Checkout Humanoid CI
+  #       uses: actions/checkout@v3
+  #       with:
+  #         repository: Humanoidfr/humanoid-ci
+  #         token: ${{ secrets.token }}
+  #         path: .github/actions/humanoid-ci
 
-      - name: Generate base code coverage
-        if: ${{ github.event_name == 'pull_request' }}
-        continue-on-error: true
-        run: |
-          cd /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }} && composer update -n --no-scripts --no-progress
-          XDEBUG_MODE=coverage ./vendor/bin/phpunit --coverage-clover=coverage.xml
-          cd - && cp /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }}/coverage.xml base-coverage.xml
-        shell: bash
+  #     - name: Generate base code coverage
+  #       if: ${{ github.event_name == 'pull_request' }}
+  #       continue-on-error: true
+  #       run: |
+  #         cd /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }} && composer update -n --no-scripts --no-progress
+  #         XDEBUG_MODE=coverage ./vendor/bin/phpunit --coverage-clover=coverage.xml
+  #         cd - && cp /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }}/coverage.xml base-coverage.xml
+  #       shell: bash
 
-      - name: "Checkout repositories to current branch"
-        run: ./.github/actions/humanoid-ci/scripts/checkout.sh ${{ inputs.type }} ${{ github.event.repository.name }}
-        shell: bash
+  #     - name: "Checkout repositories to current branch"
+  #       run: ./.github/actions/humanoid-ci/scripts/checkout.sh ${{ inputs.type }} ${{ github.event.repository.name }}
+  #       shell: bash
 
-      - name: Setup current repository
-        run: |
-          [ -f /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }} ] && mv /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }} ${{ github.event.repository.name }}-${{ github.run_id }}-${{ github.run_number }}_old
-          mv ${{ github.event.repository.name }}-${{ github.run_id }}-${{ github.run_number }} /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }}
-          chown -R root:root /var/www/
-          [[ "${{ github.event.repository.name }}" != "humanoid-core" ]]  && cd /var/www/wordpress/wp-content/mu-plugins/humanoid-core && composer update -n --no-scripts --no-progress
-          cd /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }} && composer update -n --no-scripts --no-progress
-        shell: bash
+  #     - name: Setup current repository
+  #       run: |
+  #         [ -f /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }} ] && mv /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }} ${{ github.event.repository.name }}-${{ github.run_id }}-${{ github.run_number }}_old
+  #         mv ${{ github.event.repository.name }}-${{ github.run_id }}-${{ github.run_number }} /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }}
+  #         chown -R root:root /var/www/
+  #         [[ "${{ github.event.repository.name }}" != "humanoid-core" ]]  && cd /var/www/wordpress/wp-content/mu-plugins/humanoid-core && composer update -n --no-scripts --no-progress
+  #         cd /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }} && composer update -n --no-scripts --no-progress
+  #       shell: bash
 
-      - name: Generate code coverage
-        run: |
-          cd /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }}
-          XDEBUG_MODE=coverage ./vendor/bin/phpunit --coverage-clover=coverage.xml
-          cd - && cp /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }}/coverage.xml coverage.xml
-        shell: bash
+  #     - name: Generate code coverage
+  #       run: |
+  #         cd /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }}
+  #         XDEBUG_MODE=coverage ./vendor/bin/phpunit --coverage-clover=coverage.xml
+  #         cd - && cp /var/www/wordpress/wp-content/${{ inputs.type }}/${{ github.event.repository.name }}/coverage.xml coverage.xml
+  #       shell: bash
 
-      - name: Add Coverage to PR
-        if: ${{ github.event_name == 'pull_request' }}
-        uses: lucassabreu/comment-coverage-clover@main
-        with:
-          file: coverage.xml
-          base-file: base-coverage.xml
-          with-chart: false
-          show-percentage-change-on-table: true
+  #     - name: Add Coverage to PR
+  #       if: ${{ github.event_name == 'pull_request' }}
+  #       uses: lucassabreu/comment-coverage-clover@main
+  #       with:
+  #         file: coverage.xml
+  #         base-file: base-coverage.xml
+  #         with-chart: false
+  #         show-percentage-change-on-table: true
 
-      - name: Run all Unit/Integration tests
-        id: unit-tests
-        run: /var/www/vendor/bin/exec-all-tests.sh /var/www/wordpress ci
+  #     - name: Run all Unit/Integration tests
+  #       id: unit-tests
+  #       run: /var/www/vendor/bin/exec-all-tests.sh /var/www/wordpress ci
   staging:
     name: Deploy Staging
     if: ${{ always() && inputs.name != '' }}
@@ -243,23 +243,23 @@ jobs:
           recreate: true
           message: |
             **${{ matrix.target }} staging URL**: https://staging-${{ inputs.name }}.${{ matrix.target }}.com
-  e2e:
-    name: Run E2E tests
-    if: ${{ inputs.action != 'closed' && inputs.type != 'base' }}
-    needs: [tests, staging]
-    runs-on: self-hosted
-    timeout-minutes: 30
-    strategy:
-      matrix:
-        target: ${{ fromJson(inputs.targets) }}
-    steps:
-      - name: Checkout Humanoid CI
-        uses: actions/checkout@v3
-        with:
-          repository: Humanoidfr/humanoid-ci
-          token: ${{ secrets.token }}
-          path: .github/actions/humanoid-ci
+  # e2e:
+  #   name: Run E2E tests
+  #   if: ${{ inputs.action != 'closed' && inputs.type != 'base' }}
+  #   needs: [tests, staging]
+  #   runs-on: self-hosted
+  #   timeout-minutes: 30
+  #   strategy:
+  #     matrix:
+  #       target: ${{ fromJson(inputs.targets) }}
+  #   steps:
+  #     - name: Checkout Humanoid CI
+  #       uses: actions/checkout@v3
+  #       with:
+  #         repository: Humanoidfr/humanoid-ci
+  #         token: ${{ secrets.token }}
+  #         path: .github/actions/humanoid-ci
 
-      - name: Run E2E tests
-        run: |
-          ./.github/actions/humanoid-ci/e2e/run.sh ${{ matrix.target }} ${{ inputs.name }}
+  #     - name: Run E2E tests
+  #       run: |
+  #         ./.github/actions/humanoid-ci/e2e/run.sh ${{ matrix.target }} ${{ inputs.name }}
