@@ -71,13 +71,13 @@ jobs:
       with:
         files: "package.json"
 
-    - name: Install PHP dev dependencies
-      if: steps.check_composer.outputs.files_exists == 'true'
-      env:
-        CI: true
-      run: |
-        PATH=$PATH:/var/ci-env composer update -n --no-progress
-        composer global require staabm/annotate-pull-request-from-checkstyle -n --no-progress --no-audit
+    # - name: Install PHP dev dependencies
+    #   if: steps.check_composer.outputs.files_exists == 'true'
+    #   env:
+    #     CI: true
+    #   run: |
+    #     PATH=$PATH:/var/ci-env composer update -n --no-progress
+    #     composer global require staabm/annotate-pull-request-from-checkstyle -n --no-progress --no-audit
 
     - name: Install NPM dependencies
       if: steps.check_package.outputs.files_exists == 'true' && steps.check_composer.outputs.files_exists == 'false'
