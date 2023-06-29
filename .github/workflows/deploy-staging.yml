@@ -37,7 +37,7 @@ jobs:
       matrix:
         target: ${{ fromJson(inputs.targets) }}
     environment:
-      name: staging-${{ inputs.name }}
+      name: staging-${{ inputs.name }} (${{ matrix.target }})
       url: https://staging-${{ inputs.name }}.${{ matrix.target }}.com
     steps:
       - name: Checkout Humanoid CI
