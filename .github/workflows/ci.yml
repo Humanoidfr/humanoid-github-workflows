@@ -16,6 +16,10 @@ on:
         description: 'opened|reopened|synchronize|closed'
         type: string
         required: true
+      deploy:
+        type: boolean
+        required: false
+        default: true
     secrets:
       token:
         required: true
@@ -203,7 +207,7 @@ jobs:
   #       run: /var/www/vendor/bin/exec-all-tests.sh /var/www/wordpress ci
   staging:
     name: Deploy Staging
-    if: ${{ always() && inputs.name != '' }}
+    if: ${{ always() && inputs.name != '' && inputs.deploy }}
     runs-on: self-hosted
     timeout-minutes: 30
     strategy:
