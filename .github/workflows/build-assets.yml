@@ -1,0 +1,40 @@
+name: Build assets
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        required: false
+        type: string
+        default: '18.x'
+      file-pattern:
+        required: false
+        type: string
+        default: 'dist/**/* build/**/*'
+      build-cmd:
+        required: false
+        type: string
+        default: 'npm run build'
+
+jobs:
+  build-assets:
+    name: Build assets & commit/push changes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - uses: bahmutov/npm-install@v1
+
+      - name: Build assets
+        run: ${{ inputs.build-cmd }}
+
+    #   - uses: stefanzweifel/git-auto-commit-action@v4
+    #     with:
+    #       commit_message: "chore: 🤖 Build assets"
+    #       file_pattern: ${{ inputs.file-pattern }}
