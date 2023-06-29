@@ -1,0 +1,76 @@
+name: Deploy to staging
+
+on:
+  workflow_call:
+    inputs:
+      targets:
+        required: true
+        type: string
+      name:
+        type: string
+        default: ''
+      action:
+        description: 'opened|reopened|synchronize|closed'
+        type: string
+        required: true
+    secrets:
+      token:
+        required: true
+      staging-token:
+        required: true
+      staging-mad-token:
+        required: true
+      private-key:
+        required: true
+      docker-username:
+        required: true
+      docker-password:
+        required: true
+
+jobs:
+  deploy:
+    name: Deploy Staging
+    if: ${{ always() && inputs.name != '' }}
+    runs-on: self-hosted
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        target: ${{ fromJson(inputs.targets) }}
+    environment:
+      name: staging-${{ inputs.name }}
+      url: https://staging-${{ inputs.name }}.${{ matrix.target }}.com
+    steps:
+      - name: Checkout Humanoid CI
+        uses: actions/checkout@v3
+        with:
+          repository: Humanoidfr/humanoid-ci
+          token: ${{ secrets.token }}
+          path: .github/actions/humanoid-ci
+
+      - name: Create/update "${{ inputs.name }}" ${{ matrix.target }} staging environment
+        if: ${{ inputs.action == 'opened' || inputs.action == 'reopened' || inputs.action == 'synchronize' }}
+        env:
+            HUMANOID_TOKEN: ${{ secrets.staging-token }}
+            MADMOIZELLE_TOKEN: ${{ secrets.staging-mad-token }}
+            IS_WOODY: true
+        run: |
+            python3 ./.github/actions/humanoid-ci/scripts/preprod.py clone ${{ matrix.target }} ${{ inputs.name }} ${{ inputs.name }} "${{ github.event.pull_request.html_url }}" ${{ toJson(github.event.pull_request.body) }} "${{ github.event.pull_request.user.avatar_url }}"
+            echo "s3_url=http://$(pulumi stack output bucketUrl)" >> $GITHUB_OUTPUT
+
+      - name: Delete "${{ inputs.name }}" ${{ matrix.target }} staging environment
+        if: ${{ inputs.action == 'closed' }}
+        env:
+            HUMANOID_TOKEN: ${{ secrets.staging-token }}
+            MADMOIZELLE_TOKEN: ${{ secrets.staging-mad-token }}
+            IS_WOODY: true
+        run: |
+            python3 ./.github/actions/humanoid-ci/scripts/preprod.py delete ${{ matrix.target }} ${{ inputs.name }}
+
+      - name: Add staging environment URL to PR
+        uses: marocchino/sticky-pull-request-comment@v2
+        if: ${{ inputs.action == 'opened' || inputs.action == 'reopened' || inputs.action == 'synchronize' }}
+        with:
+          header: ${{ matrix.target }}
+          recreate: true
+          message: |
+            **${{ matrix.target }} staging URL**: https://staging-${{ inputs.name }}.${{ matrix.target }}.com
