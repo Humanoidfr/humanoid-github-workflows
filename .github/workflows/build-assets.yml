@@ -10,7 +10,7 @@ on:
       file-pattern:
         required: false
         type: string
-        default: 'dist/**/* build/**/*'
+        default: 'dist/**/*'
       build-cmd:
         required: false
         type: string
