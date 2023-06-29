@@ -42,6 +42,9 @@ jobs:
       - name: Build assets
         run: ${{ inputs.build-cmd }}
 
+      - name: Test
+        run: git status
+
     #   - uses: stefanzweifel/git-auto-commit-action@v4
     #     with:
     #       commit_message: "chore: 🤖 Build assets"
