@@ -239,14 +239,14 @@ jobs:
         run: |
           python3 ./.github/actions/humanoid-ci/scripts/preprod.py delete ${{ matrix.target }} ${{ inputs.name }}
 
-      - name: Add staging environment URL to PR
-        uses: marocchino/sticky-pull-request-comment@v2
-        if: ${{ inputs.action == 'opened' || inputs.action == 'reopened' || inputs.action == 'synchronize' }}
-        with:
-          header: ${{ matrix.target }}
-          recreate: true
-          message: |
-            **${{ matrix.target }} staging URL**: https://staging-${{ inputs.name }}.${{ matrix.target }}.com
+      # - name: Add staging environment URL to PR
+      #   uses: marocchino/sticky-pull-request-comment@v2
+      #   if: ${{ inputs.action == 'opened' || inputs.action == 'reopened' || inputs.action == 'synchronize' }}
+      #   with:
+      #     header: ${{ matrix.target }}
+      #     recreate: true
+      #     message: |
+      #       **${{ matrix.target }} staging URL**: https://staging-${{ inputs.name }}.${{ matrix.target }}.com
   # e2e:
   #   name: Run E2E tests
   #   if: ${{ inputs.action != 'closed' && inputs.type != 'base' }}
