@@ -1,0 +1,57 @@
+name: PHP Unit Tests
+
+on:
+  workflow_call:
+    inputs:
+      PHP_VERSION:
+        description: PHP version with which the static code analysis is to be executed.
+        default: "8.1"
+        required: false
+        type: string
+      COMPOSER_ARGS:
+        description: Set of arguments passed to Composer.
+        default: '--prefer-dist --no-scripts'
+        required: false
+        type: string
+      PHPUNIT_ARGS:
+        description: Set of arguments passed to PHPUnit.
+        default: '--testdox'
+        required: false
+        type: string
+    secrets:
+      COMPOSER_AUTH_JSON:
+        description: Authentication for privately hosted packages and repositories as a JSON formatted object.
+        required: false
+
+jobs:
+  php-unit-tests:
+    name: PHP Unit Tests
+    runs-on: ubuntu-latest
+    env:
+      COMPOSER_AUTH: '${{ secrets.COMPOSER_AUTH_JSON }}'
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Set up PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ inputs.PHP_VERSION }}
+
+    - name: Set Composer global config
+      run: echo $COMPOSER_CONFIG > $(composer -n config --global home)/config.json
+      env:
+        COMPOSER_CONFIG: ${{ vars.COMPOSER_CONFIG_JSON }}
+
+    - name: Set up problem matchers for PHPUnit
+      run: echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
+
+    - name: Install Composer dependencies
+      uses: ramsey/composer-install@v2
+      with:
+        composer-options: ${{ inputs.COMPOSER_ARGS }}
+
+    - name: Run PHPUnit
+      run: ./vendor/bin/phpunit ${{ inputs.PHPUNIT_ARGS }}
