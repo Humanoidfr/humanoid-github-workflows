@@ -38,11 +38,13 @@ jobs:
         run: echo $COMPOSER_CONFIG > $(composer -n config --global home)/config.json
         env:
             COMPOSER_CONFIG: ${{ vars.COMPOSER_CONFIG_JSON }}
+            
+      - run: echo $COMPOSER_AUTH
 
       - run: composer update --no-interaction --no-scripts --prefer-dist --no-dev
 
       - name: Generate composer diff
-        id: composer_diff # To reference the output in comment
+        id: composer_diff
         uses: IonBazan/composer-diff-action@v1
         with:
           base: HEAD
