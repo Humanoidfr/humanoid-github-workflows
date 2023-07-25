@@ -37,7 +37,7 @@ jobs:
       - name: Set Composer global config
         run: echo $COMPOSER_CONFIG > $(composer -n config --global home)/config.json
         env:
-            COMPOSER_CONFIG: ${{ vars.COMPOSER_CONFIG_JSON }}
+          COMPOSER_CONFIG: ${{ vars.COMPOSER_CONFIG_JSON }}
 
       - run: echo $COMPOSER_AUTH
 

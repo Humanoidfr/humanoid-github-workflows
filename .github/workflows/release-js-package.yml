@@ -38,5 +38,5 @@ jobs:
       - uses: JS-DevTools/npm-publish@v2
         if: ${{ steps.release.outputs.release_created == 'true' }}
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.READ_PACKAGES_TOKEN }}
           registry: "https://npm.pkg.github.com"
