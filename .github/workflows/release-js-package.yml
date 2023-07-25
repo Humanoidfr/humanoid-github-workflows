@@ -12,8 +12,8 @@ on:
       READ_PACKAGES_TOKEN:
         description: Read packages token
         required: true
-      GITHUB_TOKEN:
-        description: GitHub token
+      WRITE_PACKAGES_TOKEN:
+        description: Write packages token
         required: true
 
 permissions:
@@ -49,5 +49,5 @@ jobs:
       - uses: JS-DevTools/npm-publish@v2
         if: ${{ steps.release.outputs.release_created == 'true' }}
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.WRITE_PACKAGES_TOKEN }}
           registry: "https://npm.pkg.github.com"
