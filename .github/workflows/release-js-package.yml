@@ -1,0 +1,41 @@
+name: Release JS package
+
+on:
+  workflow_call:
+    inputs:
+      RELEASE_TYPE:
+        description: Type of package manager
+        default: "node"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+  packages: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+
+      - run: |
+          npm install
+          npm run build --if-present
+
+      - uses: google-github-actions/release-please-action@v3
+        id: release
+        with:
+          release-type: ${{ inputs.RELEASE_TYPE }}
+          package-name: ${{ github.event.client_payload.repo_name }}
+
+      - uses: JS-DevTools/npm-publish@v2
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          registry: "https://npm.pkg.github.com"
