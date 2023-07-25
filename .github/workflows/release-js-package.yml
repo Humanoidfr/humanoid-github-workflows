@@ -12,6 +12,9 @@ on:
       READ_PACKAGES_TOKEN:
         description: Read packages token
         required: true
+      GITHUB_TOKEN:
+        description: GitHub token
+        required: true
 
 permissions:
   contents: write
