@@ -8,6 +8,10 @@ on:
         default: "node"
         required: false
         type: string
+    secrets:
+      READ_PACKAGES_TOKEN:
+        description: Read packages token
+        required: true
 
 permissions:
   contents: write
@@ -25,9 +29,11 @@ jobs:
         with:
           node-version: "18"
 
-      - run: |
-          npm install
-          npm run build --if-present
+      - uses: bahmutov/npm-install@v1
+        env:
+          NPM_AUTH_TOKEN: ${{ secrets.READ_PACKAGES_TOKEN }}
+
+      - run: npm run build --if-present
 
       - uses: google-github-actions/release-please-action@v3
         id: release
@@ -38,5 +44,5 @@ jobs:
       - uses: JS-DevTools/npm-publish@v2
         if: ${{ steps.release.outputs.release_created == 'true' }}
         with:
-          token: ${{ secrets.READ_PACKAGES_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           registry: "https://npm.pkg.github.com"
