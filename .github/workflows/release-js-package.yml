@@ -29,7 +29,9 @@ jobs:
         with:
           node-version: "18"
 
-      - run: npm i
+      - uses: bahmutov/npm-install@v1
+        with:
+          useLockFile: false
         env:
           NPM_AUTH_TOKEN: ${{ secrets.READ_PACKAGES_TOKEN }}
 
