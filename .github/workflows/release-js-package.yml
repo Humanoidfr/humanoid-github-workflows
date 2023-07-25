@@ -46,8 +46,7 @@ jobs:
           release-type: ${{ inputs.RELEASE_TYPE }}
           package-name: ${{ github.event.client_payload.repo_name }}
 
-      - uses: JS-DevTools/npm-publish@v2
+      - run: npm publish
         if: ${{ steps.release.outputs.release_created == 'true' }}
-        with:
-          token: ${{ secrets.WRITE_PACKAGES_TOKEN }}
-          registry: "https://npm.pkg.github.com"
+        env:
+          NPM_AUTH_TOKEN: ${{ secrets.WRITE_PACKAGES_TOKEN }}
