@@ -25,7 +25,6 @@ jobs:
         name: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
         url: ${{ inputs.URL }}
       steps:
-        - uses: crazy-max/ghaction-dump-context@v2
         - uses: actions/checkout@v4
 
         - uses: webfactory/ssh-agent@v0.8.0
@@ -39,7 +38,7 @@ jobs:
           with:
             php-version: ${{ inputs.PHP_VERSION }}
 
-        - run: whoami
+        - run: which composer
         - run: php -v
         - run: composer --version
 
