@@ -34,11 +34,9 @@ jobs:
         - name: Disable host key check
           run: echo -e "Host *\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
 
-        - uses: shivammathur/setup-php@v2
+        - uses: shivammathur/setup-php@verbose
           with:
             php-version: ${{ inputs.PHP_VERSION }}
-          env:
-            runner: self-hosted
 
         - run: composer install -d tools/deployer
 
