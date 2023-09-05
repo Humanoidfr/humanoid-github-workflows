@@ -38,7 +38,6 @@ jobs:
           with:
             php-version: ${{ inputs.PHP_VERSION }}
 
-        - run: ls -la /root/.config/composer
         - run: echo $COMPOSER_HOME
         - run: echo $HOME
         - run: php -v
