@@ -38,7 +38,7 @@ jobs:
           with:
             php-version: ${{ inputs.PHP_VERSION }}
 
-        - run: export COMPOSER_HOME="$HOME/.config/composer"
+        - run: whoami
         - run: php -v
         - run: composer --version
 
