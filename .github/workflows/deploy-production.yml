@@ -40,12 +40,7 @@ jobs:
           env:
             runner: self-hosted
 
-        - uses: ramsey/composer-install@v2
-          with:
-            composer-options: "--no-scripts --no-dev"
-            working-directory: tools/deployer
-          env:
-            runner: self-hosted
+        - run: composer install -d tools/deployer
 
         - run: echo "CURRENT_BRANCH=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_ENV
 
