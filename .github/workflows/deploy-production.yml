@@ -44,6 +44,8 @@ jobs:
           with:
             composer-options: "--no-scripts --no-dev"
             working-directory: tools/deployer
+          env:
+            runner: self-hosted
 
         - run: echo "CURRENT_BRANCH=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_ENV
 
