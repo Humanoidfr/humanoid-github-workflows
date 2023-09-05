@@ -31,8 +31,10 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: "18"
-          registry-url: 'https://npm.pkg.github.com'
-          token: ${{ secrets.READ_PACKAGES_TOKEN }}
+
+      - run: |
+          npm config set //npm.pkg.github.com/:_authToken ${{ secrets.READ_PACKAGES_TOKEN }}
+          npm config set @humanoidfr:registry http://npm.pkg.github.com/
 
       - uses: bahmutov/npm-install@v1
         with:
