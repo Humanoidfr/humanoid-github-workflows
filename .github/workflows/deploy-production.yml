@@ -38,6 +38,7 @@ jobs:
           with:
             php-version: ${{ inputs.PHP_VERSION }}
 
+        - run: php -v
         - run: composer --version
 
         - uses: ramsey/composer-install@v2
