@@ -40,7 +40,5 @@ jobs:
 
         - run: export HOME=/root/ && composer install -d tools/deployer
 
-        - run: echo "CURRENT_BRANCH=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_ENV
-
-        - name: Deploy branch ${{ env.CURRENT_BRANCH }} to ${{ env.CURRENT_BRANCH == 'main' && 'production' || 'staging' }}
-          run: ./tools/deployer/vendor/bin/dep deploy -vv --branch=${{ env.CURRENT_BRANCH }} stage=${{ env.CURRENT_BRANCH == 'main' && 'production' || 'staging' }}
+        - name: Deploy to production
+          run: ./tools/deployer/vendor/bin/dep deploy -vv stage=production
