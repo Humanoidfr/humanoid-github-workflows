@@ -9,11 +9,8 @@ on:
         required: false
         type: string
     secrets:
-      READ_PACKAGES_TOKEN:
-        description: Read packages token
-        required: true
-      WRITE_PACKAGES_TOKEN:
-        description: Write packages token
+      READ_WRITE_PACKAGES_TOKEN:
+        description: Read/write packages token
         required: true
 
 permissions:
@@ -32,25 +29,31 @@ jobs:
         with:
           node-version: "18"
 
-      - run: |
-          npm config set //npm.pkg.github.com/:_authToken ${{ secrets.READ_PACKAGES_TOKEN }}
-          npm config set @humanoidfr:registry http://npm.pkg.github.com/
-
-      - uses: bahmutov/npm-install@v1
-        with:
-          useLockFile: false
-        env:
-          NPM_AUTH_TOKEN: ${{ secrets.READ_PACKAGES_TOKEN }}
-
-      - run: npm run build --if-present
-
       - uses: google-github-actions/release-please-action@v3
         id: release
         with:
           release-type: ${{ inputs.RELEASE_TYPE }}
           package-name: ${{ github.event.client_payload.repo_name }}
 
-      - run: npm publish
+      - name: Set up NPM auth
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        run: |
+          npm config set //npm.pkg.github.com/:_authToken ${{ secrets.READ_WRITE_PACKAGES_TOKEN }}
+          npm config set @humanoidfr:registry http://npm.pkg.github.com/
+
+      - uses: bahmutov/npm-install@v1
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        with:
+          useLockFile: false
+        env:
+          NPM_AUTH_TOKEN: ${{ secrets.READ_WRITE_PACKAGES_TOKEN }}
+
+      - name: Build package
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        run: npm run build --if-present
+
+      - name: Publish package
+        run: npm publish
         if: ${{ steps.release.outputs.release_created == 'true' }}
         env:
-          NPM_AUTH_TOKEN: ${{ secrets.WRITE_PACKAGES_TOKEN }}
+          NPM_AUTH_TOKEN: ${{ secrets.READ_WRITE_PACKAGES_TOKEN }}
