@@ -38,8 +38,7 @@ jobs:
           with:
             php-version: ${{ inputs.PHP_VERSION }}
 
-        - run: mkdir -p .config/composer && export COMPOSER_HOME="$HOME/.config/composer"
-        - run: composer install -d tools/deployer
+        - run: export HOME=/root/ && composer install -d tools/deployer
 
         - run: echo "CURRENT_BRANCH=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_ENV
 
