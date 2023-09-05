@@ -38,6 +38,7 @@ jobs:
           with:
             php-version: ${{ inputs.PHP_VERSION }}
 
+        - run: ls -la
         - run: composer install -d tools/deployer
 
         - run: echo "CURRENT_BRANCH=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_ENV
