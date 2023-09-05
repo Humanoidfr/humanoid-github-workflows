@@ -32,6 +32,7 @@ jobs:
         with:
           node-version: "18"
           registry-url: 'https://npm.pkg.github.com'
+          token: ${{ secrets.READ_PACKAGES_TOKEN }}
 
       - uses: bahmutov/npm-install@v1
         with:
