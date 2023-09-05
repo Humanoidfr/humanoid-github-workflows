@@ -37,6 +37,8 @@ jobs:
         - uses: shivammathur/setup-php@v2
           with:
             php-version: ${{ inputs.PHP_VERSION }}
+          env:
+            runner: self-hosted
 
         - uses: ramsey/composer-install@v2
           with:
