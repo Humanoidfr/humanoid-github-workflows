@@ -17,6 +17,6 @@ jobs:
     name: Trigger dependencies update
     runs-on: ubuntu-latest
     steps:
-      - run: gh workflow run composer-update.yml --repo Humanoidfr/${{ inputs.TARGET }}
+      - run: gh workflow run composer-update.yml --repo https://github.com/Humanoidfr/${{ inputs.TARGET }}
         env:
           GITHUB_TOKEN: ${{ secrets.TOKEN }}
