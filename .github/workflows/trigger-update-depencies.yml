@@ -1,0 +1,18 @@
+name: Trigger dependencies update
+
+on:
+  workflow_call:
+    inputs:
+      TARGET:
+        description: Target repo to trigger update dependencies on
+        required: true
+        type: string
+
+jobs:
+  trigger-update:
+    name: Trigger dependencies update
+    runs-on: ubuntu-latest
+    steps:
+      - run: gh workflow run composer-update.yml --repo=Humanoidfr/$TARGET
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
