@@ -2,21 +2,61 @@ name: Trigger dependencies update
 
 on:
   workflow_call:
-    inputs:
-      TARGET:
-        description: Target repo to trigger update dependencies on
-        required: true
-        type: string
     secrets:
       TOKEN:
         description: Token to use to trigger update dependencies
         required: true
 
 jobs:
+  # Automatically gets root repos targets
+  targets:
+    runs-on: ubuntu-latest
+    outputs:
+      targets: ${{ steps.targets.outputs.result }}
+    steps:
+      - uses: actions/github-script@v6
+        id: targets
+        env:
+          TOKEN: ${{ secrets.TOKEN }}
+        with:
+          github-token: ${{ secrets.TOKEN }}
+          script: |
+            async function getRepoPackages(repo) {
+              const response = await fetch(
+                `https://raw.githubusercontent.com/Humanoidfr/${repo}/main/composer.json`,
+                {
+                  headers: {
+                    Authorization: `token ${process.env.TOKEN}`,
+                  },
+                }
+              );
+              const composerJson = await response.json();
+              return Object.keys(composerJson.require)
+                .filter((package) => package.startsWith("humanoid"))
+                .map((package) => package.split("/")[1]);
+            }
+
+            async function getTargets() {
+              const targets = [];
+              const rootRepos = ["frandroid", "madmoizelle", "numerama"];
+              for (const repo of rootRepos) {
+                const packages = await getRepoPackages(repo);
+                if (packages.includes(context.repo.repo)) {
+                  targets.push(repo);
+                }
+              }
+              return targets;
+            }
+            return await getTargets();
+
   trigger-update:
     name: Trigger dependencies update
     runs-on: ubuntu-latest
+    needs: targets
+    strategy:
+      matrix:
+        target: ${{ fromJson(needs.targets.outputs.targets) }}
     steps:
-      - run: gh workflow run composer-update.yml --repo https://github.com/Humanoidfr/${{ inputs.TARGET }}
+      - run: gh workflow run composer-update.yml --repo Humanoidfr/${{ matrix.target }}
         env:
           GITHUB_TOKEN: ${{ secrets.TOKEN }}
