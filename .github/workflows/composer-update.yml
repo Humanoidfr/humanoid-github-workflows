@@ -51,7 +51,7 @@ jobs:
           with-links: true
           no-dev: true
 
-      - run: echo "NOW=$(date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
+      - run: echo "NOW=$(TZ=Europe/Paris date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
 
       - uses: peter-evans/create-pull-request@v5
         if: ${{ steps.composer_diff.outputs.composer_diff_exit_code != 0 }}
@@ -60,7 +60,7 @@ jobs:
             composer.lock
           commit-message: "feat: update dependencies"
           branch: update-dependencies
-          title: "${{ env.NOW }} Update dependencies"
+          title: "[${{ env.NOW }}] Update dependencies"
           body: |
             ## Update summary
 
