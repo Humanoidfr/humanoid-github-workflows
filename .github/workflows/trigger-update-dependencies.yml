@@ -7,12 +7,16 @@ on:
         description: Target repo to trigger update dependencies on
         required: true
         type: string
+    secrets:
+      TOKEN:
+        description: Token to use to trigger update dependencies
+        required: true
 
 jobs:
   trigger-update:
     name: Trigger dependencies update
     runs-on: ubuntu-latest
     steps:
-      - run: gh workflow run composer-update.yml --repo=Humanoidfr/${{ inputs.TARGET }}
+      - run: gh workflow run composer-update.yml --repo=Humanoidfr/${{ inputs.TARGET }} --ref=main
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
