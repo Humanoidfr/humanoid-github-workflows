@@ -10,6 +10,7 @@ on:
 jobs:
   # Automatically gets root repos targets
   targets:
+    name: Get targets
     runs-on: ubuntu-latest
     outputs:
       targets: ${{ steps.targets.outputs.result }}
