@@ -2,6 +2,11 @@ name: Deploy to production
 on:
   workflow_call:
     inputs:
+      ACTION:
+        description: Action to be performed
+        default: deploy
+        type: string
+        required: true
       URL:
         required: true
         type: string
@@ -41,4 +46,4 @@ jobs:
         - run: export HOME=/root/ && composer install -d tools/deployer
 
         - name: Deploy to production
-          run: ./tools/deployer/vendor/bin/dep deploy -vv stage=production
+          run: ./tools/deployer/vendor/bin/dep ${{ inputs.ACTION }} -vv stage=production
