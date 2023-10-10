@@ -59,6 +59,7 @@ jobs:
         with:
           add-paths: |
             composer.lock
+            wp-translation-downloader.lock
           commit-message: "feat: update dependencies"
           branch: update-dependencies
           title: "[${{ env.NOW }}] Update dependencies"
