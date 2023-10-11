@@ -58,8 +58,7 @@ jobs:
         if: ${{ steps.composer_diff.outputs.composer_diff_exit_code != 0 }}
         with:
           add-paths: |
-            composer.lock
-            wp-translation-downloader.lock
+            *.lock
           commit-message: "feat: update dependencies"
           branch: update-dependencies
           title: "[${{ env.NOW }}] Update dependencies"
