@@ -43,6 +43,8 @@ jobs:
           with:
             php-version: ${{ inputs.PHP_VERSION }}
 
+        - run: composer -vvv about
+
         - run: export HOME=/root/ && composer install -d tools/deployer --prefer-dist --no-progress --no-interaction --no-dev
 
         - name: Deploy to production
