@@ -41,6 +41,7 @@ runs:
         tools: ${{ inputs.PHP_TOOLS }}
 
     - name: Set Composer global config
+      shell: bash
       run: echo $COMPOSER_CONFIG > $(composer -n config --global home)/config.json
       env:
         COMPOSER_CONFIG: ${{ inputs.COMPOSER_CONFIG }}
