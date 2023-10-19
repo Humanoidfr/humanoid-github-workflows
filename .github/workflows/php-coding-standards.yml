@@ -41,7 +41,7 @@ jobs:
           fetch-depth: 0
 
       - name: Composer setup
-        uses: Humanoidfr/humanoid-github-workflows/.github/actions/composer/action.yml@main
+        uses: Humanoidfr/humanoid-github-workflows/.github/actions/composer@main
         with:
           PHP_VERSION: ${{ inputs.PHP_VERSION }}
           PHP_TOOLS: "composer, cs2pr"
