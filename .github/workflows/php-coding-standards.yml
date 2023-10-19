@@ -40,25 +40,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up PHP
-        uses: shivammathur/setup-php@v2
+      - name: Composer setup
+        uses: ./.github/actions/composer
         with:
-          php-version: ${{ inputs.PHP_VERSION }}
-          tools: composer, cs2pr
-          coverage: none
-
-      - name: Set Composer global config
-        run: echo $COMPOSER_CONFIG > $(composer -n config --global home)/config.json
-        env:
-          COMPOSER_CONFIG: ${{ vars.COMPOSER_CONFIG_JSON }}
-
-      - name: Validate composer.json and composer.lock
-        run: composer validate
-
-      - name: Install Composer dependencies
-        uses: ramsey/composer-install@v2
-        with:
-          composer-options: ${{ inputs.COMPOSER_ARGS }}
+          PHP_VERSION: ${{ inputs.PHP_VERSION }}
+          PHP_TOOLS: "composer, cs2pr"
 
       - name: Get changed files
         id: changed-files

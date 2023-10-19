@@ -1,0 +1,50 @@
+name: 'Composer'
+description: 'Install private composer dependencies'
+inputs:
+  PHP_VERSION:
+    description: PHP version
+    default: "8.1"
+    required: false
+    type: string
+  PHP_TOOLS:
+    description: PHP version
+    default: "composer"
+    required: false
+    type: string
+  COMPOSER_ARGS:
+    description: Set of arguments passed to Composer.
+    default: '--prefer-dist --no-scripts'
+    required: false
+    type: string
+  INSTALL_AND_CACHE:
+    description: Set of arguments passed to Composer.
+    default: true
+    required: false
+    type: boolean
+secrets:
+  COMPOSER_AUTH_JSON:
+    description: Authentication for privately hosted packages and repositories as a JSON formatted object.
+    required: false
+
+runs:
+  using: composite
+  steps:
+    - name: Set up PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ inputs.PHP_VERSION }}
+        tools: ${{ inputs.PHP_TOOLS }}
+
+    - name: Set Composer global config
+      run: echo $COMPOSER_CONFIG > $(composer -n config --global home)/config.json
+      env:
+        COMPOSER_CONFIG: ${{ vars.COMPOSER_CONFIG_JSON }}
+
+    - name: Validate composer.json and composer.lock
+      run: composer validate
+
+    - name: Install Composer dependencies
+      uses: ramsey/composer-install@v2
+      if: ${{ inputs.INSTALL_AND_CACHE }}
+      with:
+        composer-options: ${{ inputs.COMPOSER_ARGS }}
