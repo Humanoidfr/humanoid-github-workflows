@@ -19,6 +19,9 @@ on:
       SSH_PRIVATE_KEY:
         description: Private key to access deploy server
         required: true
+      COMPOSER_AUTH_JSON:
+        description: Authentication for privately hosted packages and repositories as a JSON formatted object.
+        required: false
 
 jobs:
     # Deploy
@@ -26,6 +29,10 @@ jobs:
       name: Deploying to ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
       # runs-on: ubuntu-latest
       runs-on: self-hosted
+      env:
+        HOME: /root
+        COMPOSER_ALLOW_SUPERUSER: 1
+        COMPOSER_AUTH: "${{ secrets.COMPOSER_AUTH_JSON }}"
       environment:
         name: production
         url: ${{ inputs.URL }}
@@ -39,13 +46,19 @@ jobs:
         - name: Disable host key check
           run: echo -e "Host *\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
 
-        - uses: shivammathur/setup-php@verbose
+        - name: Prepend /usr/local/bin to PATH
+          run: |
+            echo "PATH=/usr/local/bin:$PATH" >> $GITHUB_ENV
+            echo "PATH=/usr/local/bin:$PATH" >> $HOME/.bashrc
+            echo "PATH=/usr/local/bin:$PATH" >> $HOME/.profile
+            echo "PATH=/usr/local/bin:$PATH" >> $HOME/.bash_profile
+
+        - name: Composer setup
+          uses: Humanoidfr/humanoid-github-workflows/.github/actions/composer@main
           with:
-            php-version: ${{ inputs.PHP_VERSION }}
-
-        - run: composer -vvv about
-
-        - run: export HOME=/root/ && composer install -d tools/deployer --prefer-dist --no-progress --no-interaction --no-dev
+            PHP_VERSION: ${{ inputs.PHP_VERSION }}
+            COMPOSER_CONFIG: ${{ vars.COMPOSER_CONFIG_JSON }}
+            COMPOSER_ARGS: '-d tools/deployer --prefer-dist --no-dev'
 
         - name: Deploy to production
           run: ./tools/deployer/vendor/bin/dep ${{ inputs.ACTION }} -vv stage=production
