@@ -45,6 +45,7 @@ jobs:
         with:
           PHP_VERSION: ${{ inputs.PHP_VERSION }}
           PHP_TOOLS: "composer, cs2pr"
+          COMPOSER_CONFIG: ${{ vars.COMPOSER_CONFIG_JSON }}
 
       - name: Get changed files
         id: changed-files
