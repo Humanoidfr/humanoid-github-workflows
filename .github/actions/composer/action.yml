@@ -21,6 +21,11 @@ inputs:
     default: true
     required: false
     type: boolean
+  COMPOSER_CONFIG_JSON:
+    description: Composer configuration as a JSON formatted object.
+    required: false
+    type: string
+
 secrets:
   COMPOSER_AUTH_JSON:
     description: Authentication for privately hosted packages and repositories as a JSON formatted object.
@@ -38,7 +43,7 @@ runs:
     - name: Set Composer global config
       run: echo $COMPOSER_CONFIG > $(composer -n config --global home)/config.json
       env:
-        COMPOSER_CONFIG: ${{ vars.COMPOSER_CONFIG_JSON }}
+        COMPOSER_CONFIG: ${{ inputs.COMPOSER_CONFIG_JSON }}
 
     - name: Validate composer.json and composer.lock
       run: composer validate
