@@ -31,19 +31,12 @@ jobs:
           fetch-depth: 0
           ref: main
 
-      - name: Set up PHP
-        uses: shivammathur/setup-php@v2
+      - name: Composer setup
+        uses: Humanoidfr/humanoid-github-workflows/.github/actions/composer@main
         with:
-          php-version: ${{ inputs.PHP_VERSION }}
-          tools: composer
-          coverage: none
-
-      - name: Set Composer global config
-        run: echo $COMPOSER_CONFIG > $(composer -n config --global home)/config.json
-        env:
+          PHP_VERSION: ${{ inputs.PHP_VERSION }}
           COMPOSER_CONFIG: ${{ vars.COMPOSER_CONFIG_JSON }}
-
-      - run: echo $COMPOSER_AUTH
+          INSTALL_AND_CACHE: false
 
       - run: composer update --no-interaction --no-scripts --prefer-dist --no-dev
 
