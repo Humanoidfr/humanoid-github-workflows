@@ -22,6 +22,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       COMPOSER_AUTH: "${{ secrets.COMPOSER_AUTH_JSON }}"
+    concurrency:
+      group: ${{ github.repository }}
+      cancel-in-progress: true
     steps:
       - uses: actions/checkout@v4
         with:
