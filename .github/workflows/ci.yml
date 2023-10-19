@@ -48,7 +48,7 @@ jobs:
         password: ${{ secrets.docker-password }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
@@ -132,7 +132,7 @@ jobs:
   #       password: ${{ secrets.docker-password }}
   #   steps:
   #     - name: Checkout repository
-  #       uses: actions/checkout@v3
+  #       uses: actions/checkout@v4
   #       with:
   #         ref: ${{ github.event.pull_request.head.sha }}
   #         token: ${{ secrets.token }}
@@ -158,7 +158,7 @@ jobs:
   #         git config --system --add safe.directory '*'
 
   #     - name: Checkout Humanoid CI
-  #       uses: actions/checkout@v3
+  #       uses: actions/checkout@v4
   #       with:
   #         repository: Humanoidfr/humanoid-ci
   #         token: ${{ secrets.token }}
@@ -215,7 +215,7 @@ jobs:
         target: ${{ fromJson(inputs.targets) }}
     steps:
       - name: Checkout Humanoid CI
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: Humanoidfr/humanoid-ci
           token: ${{ secrets.token }}
@@ -258,7 +258,7 @@ jobs:
   #       target: ${{ fromJson(inputs.targets) }}
   #   steps:
   #     - name: Checkout Humanoid CI
-  #       uses: actions/checkout@v3
+  #       uses: actions/checkout@v4
   #       with:
   #         repository: Humanoidfr/humanoid-ci
   #         token: ${{ secrets.token }}
