@@ -50,14 +50,8 @@ runs:
       shell: bash
       run: composer validate
 
-    - shell: bash
-      run: |
-        if [[ "${{inputs.INSTALL_AND_CACHE}}" != "true" ]]; then
-          exit 0
-        fi
-  
     - name: Install Composer dependencies
-      # if: ${{ inputs.INSTALL_AND_CACHE }}
       uses: ramsey/composer-install@v2
+      if: ${{ inputs.INSTALL_AND_CACHE == 'true' }}
       with:
         composer-options: ${{ inputs.COMPOSER_ARGS }}
