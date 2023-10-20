@@ -51,7 +51,7 @@ runs:
       run: composer validate
 
     - name: Install Composer dependencies
-      uses: ramsey/composer-install@v2
       if: ${{ inputs.INSTALL_AND_CACHE }}
+      uses: ramsey/composer-install@v2
       with:
         composer-options: ${{ inputs.COMPOSER_ARGS }}
