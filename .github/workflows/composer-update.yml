@@ -50,7 +50,7 @@ jobs:
 
       - run: echo "NOW=$(TZ=Europe/Paris date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
 
-      - uses: peter-evans/create-pull-request@v5
+      - uses: peter-evans/create-pull-request@v6
         if: ${{ steps.composer_diff.outputs.composer_diff_exit_code != 0 }}
         with:
           add-paths: |
