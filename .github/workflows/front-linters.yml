@@ -1,5 +1,9 @@
 name: Front End Assets Linter
-on: workflow_call
+on:
+  workflow_call:
+    secrets:
+      token:
+        required: true
 jobs:
   stylelint:
     name: runner / stylelint
