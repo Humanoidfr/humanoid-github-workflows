@@ -2,7 +2,7 @@ name: Front End Assets Linter
 on:
   workflow_call:
     secrets:
-      GITHUB_TOKEN:
+      GH_TOKEN:
         required: true
       READ_WRITE_PACKAGES_TOKEN:
         description: Read/write packages token
@@ -31,7 +31,7 @@ jobs:
       - name: Run Stylelint
         uses: reviewdog/action-stylelint@v1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.GH_TOKEN }}
           reporter: github-pr-review
           filter_mode: nofilter
           fail_on_error: true
@@ -40,7 +40,7 @@ jobs:
       - name: Run ESlint
         uses: reviewdog/action-eslint@v1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.GH_TOKEN }}
           reporter: github-pr-review
           filter_mode: diff_context
           fail_on_error: true
