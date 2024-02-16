@@ -1,0 +1,60 @@
+name: Front End Assets Linter
+on:
+  workflow_call:
+    secrets:
+      GH_TOKEN:
+        required: true
+jobs:
+  lint-assets:
+    name: Stylelint & ESlint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Get changed styles files
+        id: scss-changed-files
+        uses: tj-actions/changed-files@v24
+        with:
+          files: |
+            **/*.scss
+      - name: Get changed javascript files
+        id: js-changed-files
+        uses: tj-actions/changed-files@v24
+        with:
+          files: |
+            **/*.js
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Set up NPM auth
+        if: steps.scss-changed-files.outputs.any_changed != '' || steps.js-changed-files.outputs.any_changed != ''
+        run: |
+          npm config set //npm.pkg.github.com/:_authToken ${{ secrets.GH_TOKEN }}
+          npm config set @humanoidfr:registry http://npm.pkg.github.com/
+      - name: Install npm packages
+        if: steps.scss-changed-files.outputs.any_changed != '' || steps.js-changed-files.outputs.any_changed != ''
+        shell: bash
+        run: npm ci stylelint eslint
+        env:
+          NPM_AUTH_TOKEN: ${{ secrets.GH_TOKEN }}
+      - name: Run Stylelint
+        if: steps.scss-changed-files.outputs.any_changed != ''
+        uses: reviewdog/action-stylelint@v1
+        with:
+          github_token: ${{ secrets.GH_TOKEN }}
+          reporter: github-pr-review
+          filter_mode: diff_context
+          fail_on_error: false
+          stylelint_input: '**/*.scss'
+          stylelint_config: './.stylelintrc'
+      - name: Run ESlint
+        if: steps.js-changed-files.outputs.any_changed != ''
+        uses: reviewdog/action-eslint@v1
+        with:
+          github_token: ${{ secrets.GH_TOKEN }}
+          reporter: github-pr-review
+          filter_mode: diff_context
+          fail_on_error: false
