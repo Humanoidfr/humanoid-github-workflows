@@ -2,7 +2,10 @@ name: Front End Assets Linter
 on:
   workflow_call:
     secrets:
-      token:
+      GITHUB_TOKEN:
+        required: true
+      READ_WRITE_PACKAGES_TOKEN:
+        description: Read/write packages token
         required: true
 
 jobs:
@@ -18,13 +21,17 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+      - name: Set up NPM auth
+        run: |
+          npm config set //npm.pkg.github.com/:_authToken ${{ secrets.READ_WRITE_PACKAGES_TOKEN }}
+          npm config set @humanoidfr:registry http://npm.pkg.github.com/
       - name: Install npm packages
         shell: bash
         run: npm ci stylelint eslint
       - name: Run Stylelint
         uses: reviewdog/action-stylelint@v1
         with:
-          github_token: ${{ secrets.token }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           reporter: github-pr-review
           filter_mode: nofilter
           fail_on_error: true
@@ -33,7 +40,7 @@ jobs:
       - name: Run ESlint
         uses: reviewdog/action-eslint@v1
         with:
-          github_token: ${{ secrets.token }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           reporter: github-pr-review
           filter_mode: diff_context
           fail_on_error: true
