@@ -13,6 +13,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Install stylelint globally
+        run: (npm ci stylelint -s || npm i stylelint -s)
       - name: runner / stylelint
         uses: reviewdog/action-stylelint@v1
         with:
