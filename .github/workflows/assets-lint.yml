@@ -5,7 +5,7 @@ on:
       GH_TOKEN:
         required: true
 jobs:
-  assets-linter:
+  lint-assets:
     name: Stylelint & ESlint
     runs-on: ubuntu-latest
     steps:
@@ -24,6 +24,8 @@ jobs:
       - name: Install npm packages
         shell: bash
         run: npm ci stylelint eslint
+        env:
+          NPM_AUTH_TOKEN: ${{ secrets.GH_TOKEN }}
       - name: Run Stylelint
         uses: reviewdog/action-stylelint@v1
         with:
