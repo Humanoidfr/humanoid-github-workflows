@@ -13,35 +13,33 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Get changed styles files
-        id: scss-changed-files
-        uses: tj-actions/changed-files@v24
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@42
         with:
-          files: |
-            **/*.scss
-      - name: Get changed javascript files
-        id: js-changed-files
-        uses: tj-actions/changed-files@v24
-        with:
-          files: |
-            **/*.js
+          files_yaml: |
+            styles:
+              -'**.scss'
+            scripts:
+              -'**.js'
       - name: Set up Node
+        if: steps.changed-files.outputs.any_changed == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 20
       - name: Set up NPM auth
-        if: steps.scss-changed-files.outputs.any_changed != '' || steps.js-changed-files.outputs.any_changed != ''
+        if: steps.changed-files.outputs.any_changed == 'true'
         run: |
           npm config set //npm.pkg.github.com/:_authToken ${{ secrets.GH_TOKEN }}
           npm config set @humanoidfr:registry http://npm.pkg.github.com/
       - name: Install npm packages
-        if: steps.scss-changed-files.outputs.any_changed != '' || steps.js-changed-files.outputs.any_changed != ''
+        if: steps.changed-files.outputs.any_changed == 'true'
         shell: bash
         run: npm ci stylelint eslint
         env:
           NPM_AUTH_TOKEN: ${{ secrets.GH_TOKEN }}
       - name: Run Stylelint
-        if: steps.scss-changed-files.outputs.any_changed != ''
+        if: steps.changed-files.outputs.styles_any_changed == 'true'
         uses: reviewdog/action-stylelint@v1
         with:
           github_token: ${{ secrets.GH_TOKEN }}
@@ -51,7 +49,7 @@ jobs:
           stylelint_input: '**/*.scss'
           stylelint_config: './.stylelintrc'
       - name: Run ESlint
-        if: steps.js-changed-files.outputs.any_changed != ''
+        if: steps.changed-files.outputs.scripts_any_changed == 'true'
         uses: reviewdog/action-eslint@v1
         with:
           github_token: ${{ secrets.GH_TOKEN }}
