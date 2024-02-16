@@ -4,10 +4,6 @@ on:
     secrets:
       GH_TOKEN:
         required: true
-      READ_WRITE_PACKAGES_TOKEN:
-        description: Read/write packages token
-        required: true
-
 jobs:
   assets-linter:
     name: Stylelint & ESlint
@@ -23,7 +19,7 @@ jobs:
           node-version: 20
       - name: Set up NPM auth
         run: |
-          npm config set //npm.pkg.github.com/:_authToken ${{ secrets.READ_WRITE_PACKAGES_TOKEN }}
+          npm config set //npm.pkg.github.com/:_authToken ${{ secrets.GH_TOKEN }}
           npm config set @humanoidfr:registry http://npm.pkg.github.com/
       - name: Install npm packages
         shell: bash
