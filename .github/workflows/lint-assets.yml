@@ -15,7 +15,7 @@ jobs:
           fetch-depth: 0
       - name: Get changed files
         id: changed-files
-        uses: tj-actions/changed-files@42
+        uses: tj-actions/changed-files@v42
         with:
           files_yaml: |
             styles:
