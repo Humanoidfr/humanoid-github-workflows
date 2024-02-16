@@ -4,18 +4,24 @@ on:
     secrets:
       token:
         required: true
+
 jobs:
-  stylelint:
-    name: runner / stylelint
+  assets-linter:
+    name: Stylelint & ESlint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Install stylelint globally
-        run: (npm ci stylelint -s || npm i stylelint -s)
-      - name: runner / stylelint
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install npm packages
+        shell: bash
+        run: npm ci stylelint eslint
+      - name: Run Stylelint
         uses: reviewdog/action-stylelint@v1
         with:
           github_token: ${{ secrets.token }}
@@ -24,3 +30,10 @@ jobs:
           fail_on_error: true
           stylelint_input: '**/*.scss'
           stylelint_config: './.stylelintrc'
+      - name: Run ESlint
+        uses: reviewdog/action-eslint@v1
+        with:
+          github_token: ${{ secrets.token }}
+          reporter: github-pr-review
+          filter_mode: diff_context
+          fail_on_error: true
