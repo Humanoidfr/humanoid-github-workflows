@@ -100,7 +100,6 @@ jobs:
       uses: reviewdog/action-stylelint@v1
       with:
         github_token: ${{ secrets.token }}
-        packages: 'stylelint'
         reporter: github-pr-review
         filter_mode: diff_context
         fail_on_error: true
