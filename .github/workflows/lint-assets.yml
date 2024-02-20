@@ -19,9 +19,9 @@ jobs:
         with:
           files_yaml: |
             styles:
-              -'**/*.scss'
+              - **/*.scss
             scripts:
-              -'**/*.js'
+              - **/*.js
       - name: Set up Node
         if: steps.changed-files.outputs.any_changed == 'true'
         uses: actions/setup-node@v4
