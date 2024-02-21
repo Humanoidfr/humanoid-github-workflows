@@ -1,4 +1,4 @@
-name: Front End Assets Linter
+name: Lint javascript
 on:
   workflow_call:
     secrets:
@@ -6,7 +6,7 @@ on:
         required: true
 jobs:
   lint-assets:
-    name: Stylelint & ESlint
+    name: ESlint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -17,11 +17,8 @@ jobs:
         id: changed-files
         uses: tj-actions/changed-files@v42
         with:
-          files_yaml: |
-            styles:
-              - '**/*.scss'
-            scripts:
-              - '**/*.js'
+          files: |
+            **/*.js
       - name: Set up Node
         if: steps.changed-files.outputs.any_changed == 'true'
         uses: actions/setup-node@v4
@@ -35,24 +32,14 @@ jobs:
       - name: Install npm packages
         if: steps.changed-files.outputs.any_changed == 'true'
         shell: bash
-        run: npm ci stylelint eslint
+        run: npm ci eslint
         env:
           NPM_AUTH_TOKEN: ${{ secrets.GH_TOKEN }}
-      - name: Run Stylelint
-        if: steps.changed-files.outputs.styles_any_changed == 'true'
-        uses: reviewdog/action-stylelint@v1
-        with:
-          github_token: ${{ secrets.GH_TOKEN }}
-          reporter: github-pr-review
-          filter_mode: diff_context
-          fail_on_error: false
-          stylelint_input: '**/*.scss'
-          stylelint_config: './.stylelintrc'
-      - name: Run ESlint
-        if: steps.changed-files.outputs.scripts_any_changed == 'true'
+      - name: Run linter
+        if: steps.changed-files.outputs.any_changed == 'true'
         uses: reviewdog/action-eslint@v1
         with:
           github_token: ${{ secrets.GH_TOKEN }}
           reporter: github-pr-review
           filter_mode: diff_context
-          fail_on_error: false
+          fail_on_error: true

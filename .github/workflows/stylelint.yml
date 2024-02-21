@@ -1,0 +1,47 @@
+name: Lint styles
+on:
+  workflow_call:
+    secrets:
+      GH_TOKEN:
+        required: true
+jobs:
+  lint-assets:
+    name: Stylelint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v42
+        with:
+          files: |
+            **/*.scss
+      - name: Set up Node
+        if: steps.changed-files.outputs.any_changed == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Set up NPM auth
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          npm config set //npm.pkg.github.com/:_authToken ${{ secrets.GH_TOKEN }}
+          npm config set @humanoidfr:registry http://npm.pkg.github.com/
+      - name: Install npm packages
+        if: steps.changed-files.outputs.any_changed == 'true'
+        shell: bash
+        run: npm ci stylelint
+        env:
+          NPM_AUTH_TOKEN: ${{ secrets.GH_TOKEN }}
+      - name: Run linter
+        if: steps.changed-files.outputs.any_changed == 'true'
+        uses: reviewdog/action-stylelint@v1
+        with:
+          github_token: ${{ secrets.GH_TOKEN }}
+          reporter: github-pr-review
+          filter_mode: diff_context
+          fail_on_error: true
+          stylelint_input: '**/*.scss'
+          stylelint_config: './.stylelintrc'
