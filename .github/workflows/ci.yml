@@ -89,7 +89,7 @@ jobs:
 
     - name: Get changed files
       id: changed-files
-      uses: tj-actions/changed-files@v40
+      uses: tj-actions/changed-files@v42
 
     # - name: Run PHPCS
     #   if: steps.changed-files.outputs.all_changed_files != '' && steps.check_composer.outputs.files_exists == 'true'
