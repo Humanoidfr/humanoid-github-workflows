@@ -55,7 +55,7 @@ jobs:
             IS_WOODY: true
         run: |
             python3 ./.github/actions/humanoid-ci/scripts/preprod.py clone ${{ matrix.target }} ${{ inputs.name }} ${{ inputs.name }} "${{ github.event.pull_request.html_url }}" ${{ toJson(github.event.pull_request.body) }} "${{ github.event.pull_request.user.avatar_url }}"
-            echo "s3_url=http://$(pulumi stack output bucketUrl)" >> $GITHUB_OUTPUT
+            # echo "s3_url=http://$(pulumi stack output bucketUrl)" >> $GITHUB_OUTPUT
 
       - name: Delete "${{ inputs.name }}" ${{ matrix.target }} staging environment
         if: ${{ inputs.action == 'closed' }}
