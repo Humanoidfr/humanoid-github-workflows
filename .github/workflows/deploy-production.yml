@@ -60,5 +60,5 @@ jobs:
             COMPOSER_CONFIG: ${{ vars.COMPOSER_CONFIG_JSON }}
             COMPOSER_ARGS: '-d tools/deployer --prefer-dist --no-dev'
 
-        - name: Deploy to production
+        - name: Execution ${{ inputs.ACTION }} to production
           run: ./tools/deployer/vendor/bin/dep ${{ inputs.ACTION }} -vv stage=production
