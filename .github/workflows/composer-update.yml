@@ -1,4 +1,4 @@
-name: Update composer.lock
+name: Update composer.lock and generate update PR
 on:
   workflow_call:
     inputs:
@@ -11,6 +11,9 @@ on:
       COMPOSER_AUTH_JSON:
         description: Authentication for privately hosted packages and repositories as a JSON formatted object.
         required: false
+      REPO_TOKEN:
+        description: A repository access token that can be used to authenticate with the GitHub API.
+        required: true
 
 permissions:
   pull-requests: write
@@ -47,6 +50,81 @@ jobs:
           base: HEAD
           with-links: true
           no-dev: true
+          format: json
+
+      - name: Generate PR/commit summary
+        uses: actions/github-script@v7
+        if: ${{ steps.composer_diff.outputs.composer_diff_exit_code != 0 }}
+        id: summary
+        env:
+          COMPOSER_DIFF_JSON: ${{ steps.composer_diff.outputs.composer_diff }}
+        with:
+          result-encoding: string
+          github-token: ${{ secrets.REPO_TOKEN }}
+          script: |
+            let composerDiff;
+            try {
+              composerDiff = JSON.parse(process.env.COMPOSER_DIFF_JSON);
+            } catch (e) {
+              process.exit(1);
+            }
+
+            async function getPackageCommitDetails(pack) {
+              const { name, version_base, version_target } = pack;
+              const [owner, repo] = name.split('/');
+              const fromCommit = version_base.split(' ')[1];
+              const toCommit = version_target.split(' ')[1];
+              try {
+                const { data } = await github.rest.repos.compareCommits({
+                  owner: 'Humanoidfr',
+                  repo,
+                  base: fromCommit,
+                  head: toCommit,
+                });
+                if (data.commits.length === 0) {
+                  return [];
+                }
+
+                const { commits } = data;
+
+                const commitsFormattedList = commits.map((commit) => {
+                  return `* ${commit.commit.message.split('\n')[0]} ([${commit.sha}](${
+                    commit.html_url
+                  }))`;
+                });
+                return [...commitsFormattedList];
+              } catch (e) {
+                console.log(e);
+                return [];
+              }
+            }
+
+            async function getPackageDiff(pack) {
+              const { name, operation, version_base, version_target, compare, link } = pack;
+              const section = [`### ${name} (${operation})`];
+              section.push(``);
+              if (name.startsWith('humanoid/')) {
+                const commitDiff = await getPackageCommitDetails(pack);
+                commitDiff.length && section.push(...commitDiff);
+                section.push(``);
+              }
+              section.push(`Compare: ${compare}`);
+              section.push(``);
+              return section;
+            }
+
+            async function run(diff) {
+              const composerDiffPackages = Object.values(diff.packages);
+
+              const markDown = ['## Update summary'];
+              markDown.push(``);
+              for (const pack of composerDiffPackages) {
+                const packageDiff = await getPackageDiff(pack);
+                markDown.push(...packageDiff);
+              }
+              return markDown.join('\n');
+            }
+            return run(composerDiff);
 
       - run: echo "NOW=$(TZ=Europe/Paris date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
 
@@ -55,10 +133,10 @@ jobs:
         with:
           add-paths: |
             *.lock
-          commit-message: "feat: update dependencies"
+          commit-message: |
+            release: ${{ env.NOW }}
+
+            ${{ steps.summary.outputs.result }}
           branch: update-dependencies
           title: "[${{ env.NOW }}] Update dependencies"
-          body: |
-            ## Update summary
-
-            ${{ steps.composer_diff.outputs.composer_diff }}
+          body: ${{ steps.summary.outputs.result }}
