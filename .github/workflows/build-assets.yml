@@ -50,6 +50,8 @@ jobs:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
       - uses: bahmutov/npm-install@v1
+        with:
+          working-directory: ${{ inputs.working-directory }}
 
       - name: Build assets
         run: ${{ inputs.build-cmd }}
