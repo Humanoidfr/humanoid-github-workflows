@@ -19,6 +19,10 @@ on:
         required: false
         type: boolean
         default: true
+      working-directory:
+        required: false
+        type: string
+        default: './'
     secrets:
       SSH_PRIVATE_KEY:
         description: Authentication for privately hosted packages and repositories as a JSON formatted object.
@@ -28,6 +32,9 @@ jobs:
   build-assets:
     name: Build assets & commit/push changes
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
     steps:
       - uses: actions/checkout@v4
         with:
