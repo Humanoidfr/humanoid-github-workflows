@@ -41,7 +41,7 @@ jobs:
           COMPOSER_CONFIG: ${{ vars.COMPOSER_CONFIG_JSON }}
           INSTALL_AND_CACHE: false
 
-      - run: composer update --no-interaction --no-scripts --prefer-dist --no-dev --no-install
+      - run: composer update --no-interaction --no-scripts --prefer-dist --no-dev
 
       - name: Generate composer diff
         id: composer_diff
