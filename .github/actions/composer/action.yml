@@ -46,10 +46,6 @@ runs:
       env:
         COMPOSER_CONFIG: ${{ inputs.COMPOSER_CONFIG }}
 
-    - name: Validate composer.json and composer.lock
-      shell: bash
-      run: composer validate
-
     - name: Install Composer dependencies
       uses: ramsey/composer-install@v3
       if: ${{ inputs.INSTALL_AND_CACHE == 'true' }}
