@@ -73,7 +73,10 @@ jobs:
             }
 
             async function getPackageCommitDetails(pack) {
-              const { name, version_base, version_target } = pack;
+              const { name, version_base, version_target, operation } = pack;
+              if (operation === 'install') {
+                return [];
+              }
               const [owner, repo] = name.split('/');
               const fromCommit = version_base.split(' ')[1];
               const toCommit = version_target.split(' ')[1];
