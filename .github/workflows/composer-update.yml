@@ -132,6 +132,18 @@ jobs:
             }
             return run(composerDiff);
 
+      - # Add summary to changelog
+        name: Add summary to changelog
+        if: ${{ steps.composer_diff.outputs.composer_diff_exit_code != 0 }}
+        env:
+          NOW: ${{ env.NOW }}
+        run: |
+          if [ ! -f CHANGELOG.md ]; then
+            echo "# Changelog" > CHANGELOG.md
+          fi
+
+          echo '${{ steps.summary.outputs.result }}' | cat - CHANGELOG.md > temp && mv temp CHANGELOG.md
+
       - uses: peter-evans/create-pull-request@v6
         if: ${{ steps.composer_diff.outputs.composer_diff_exit_code != 0 }}
         env:
@@ -139,6 +151,7 @@ jobs:
         with:
           add-paths: |
             *.lock
+            CHANGELOG.md
           commit-message: |
             release: ${{ env.NOW }}
 
