@@ -28,11 +28,14 @@ on:
         required: true
 
 jobs:
-  set-url:
+  prepare-url:
     name: Prepare URL
     runs-on: ubuntu-latest
     outputs:
       url: ${{ steps.set-url.outputs.url }}
+    strategy:
+      matrix:
+        target: ${{ fromJson(inputs.targets) }}
     steps:
       - name: Set URL
         id: set-url
@@ -45,19 +48,20 @@ jobs:
             DOMAIN="com"
           fi
           echo "url=https://staging-${{ inputs.name }}.${{ matrix.target }}.$DOMAIN" >> $GITHUB_OUTPUT
+  
 
   deploy:
     name: Deploy Staging
     if: ${{ always() && inputs.name != '' }}
     runs-on: self-hosted
     timeout-minutes: 30
-    needs: set-url
+    needs: prepare-url
     strategy:
       matrix:
         target: ${{ fromJson(inputs.targets) }}
     environment:
       name: staging-${{ inputs.name }} (${{ matrix.target }})
-      url: ${{ needs.set-url.outputs.url }}
+      url: ${{ needs.prepare-url.outputs.url }}
     steps:
       - name: Checkout Humanoid CI
         uses: actions/checkout@v4
