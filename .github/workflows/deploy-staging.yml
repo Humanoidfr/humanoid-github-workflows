@@ -38,7 +38,7 @@ jobs:
         target: ${{ fromJson(inputs.targets) }}
     environment:
       name: staging-${{ inputs.name }} (${{ matrix.target }})
-      url: https://staging-${{ inputs.name }}.${{ matrix.target }}.com
+      url: ${{ 'https://staging-' + inputs.name + '.' + (matrix.target == 'lemon' && 'fr' || matrix.target == 'traack' && 'io' || matrix.target + '.com') }}
     steps:
       - name: Checkout Humanoid CI
         uses: actions/checkout@v4
