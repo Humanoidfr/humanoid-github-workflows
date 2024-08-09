@@ -44,7 +44,7 @@ jobs:
           else
             DOMAIN="com"
           fi
-          echo "name=url::https://staging-${{ inputs.name }}.${{ matrix.target }}.$DOMAIN" >> $GITHUB_OUTPUT
+          echo "url=https://staging-${{ inputs.name }}.${{ matrix.target }}.$DOMAIN" >> $GITHUB_OUTPUT
 
   deploy:
     name: Deploy Staging
