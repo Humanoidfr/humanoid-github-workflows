@@ -65,13 +65,13 @@ jobs:
 
     - name: "Check composer.json existence"
       id: check_composer
-      uses: andstor/file-existence-action@v2
+      uses: andstor/file-existence-action@v3
       with:
         files: "composer.json"
 
     - name: "Check package.json existence"
       id: check_package
-      uses: andstor/file-existence-action@v2
+      uses: andstor/file-existence-action@v3
       with:
         files: "package.json"
 
