@@ -29,6 +29,7 @@ on:
 
 jobs:
   set-url:
+    name: Prepare URL
     runs-on: ubuntu-latest
     outputs:
       url: ${{ steps.set-url.outputs.url }}
@@ -37,12 +38,13 @@ jobs:
         id: set-url
         run: |
           if [ "${{ matrix.target }}" == "lemon" ]; then
-            echo "::set-output name=url::https://staging-${{ inputs.name }}.${{ matrix.target }}.fr"
+            DOMAIN="fr"
           elif [ "${{ matrix.target }}" == "traack" ]; then
-            echo "::set-output name=url::https://staging-${{ inputs.name }}.${{ matrix.target }}.io"
+            DOMAIN="io"
           else
-            echo "::set-output name=url::https://staging-${{ inputs.name }}.${{ matrix.target }}.com"
+            DOMAIN="com"
           fi
+          echo "name=url::https://staging-${{ inputs.name }}.${{ matrix.target }}.$DOMAIN" >> $GITHUB_OUTPUT
 
   deploy:
     name: Deploy Staging
