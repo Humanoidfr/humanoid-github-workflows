@@ -28,17 +28,34 @@ on:
         required: true
 
 jobs:
+  set-url:
+    runs-on: ubuntu-latest
+    outputs:
+      url: ${{ steps.set-url.outputs.url }}
+    steps:
+      - name: Set URL
+        id: set-url
+        run: |
+          if [ "${{ matrix.target }}" == "lemon" ]; then
+            echo "::set-output name=url::https://staging-${{ inputs.name }}.fr"
+          elif [ "${{ matrix.target }}" == "traack" ]; then
+            echo "::set-output name=url::https://staging-${{ inputs.name }}.io"
+          else
+            echo "::set-output name=url::https://staging-${{ inputs.name }}.${{ matrix.target }}.com"
+          fi
+
   deploy:
     name: Deploy Staging
     if: ${{ always() && inputs.name != '' }}
     runs-on: self-hosted
     timeout-minutes: 30
+    needs: set-url
     strategy:
       matrix:
         target: ${{ fromJson(inputs.targets) }}
     environment:
       name: staging-${{ inputs.name }} (${{ matrix.target }})
-      url: ${{ 'https://staging-' + inputs.name + '.' + (matrix.target == 'lemon' && 'fr' || matrix.target == 'traack' && 'io' || matrix.target + '.com') }}
+      url: ${{ needs.set-url.outputs.url }}
     steps:
       - name: Checkout Humanoid CI
         uses: actions/checkout@v4
