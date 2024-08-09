@@ -37,9 +37,9 @@ jobs:
         id: set-url
         run: |
           if [ "${{ matrix.target }}" == "lemon" ]; then
-            echo "::set-output name=url::https://staging-${{ inputs.name }}.fr"
+            echo "::set-output name=url::https://staging-${{ inputs.name }}.${{ matrix.target }}.fr"
           elif [ "${{ matrix.target }}" == "traack" ]; then
-            echo "::set-output name=url::https://staging-${{ inputs.name }}.io"
+            echo "::set-output name=url::https://staging-${{ inputs.name }}.${{ matrix.target }}.io"
           else
             echo "::set-output name=url::https://staging-${{ inputs.name }}.${{ matrix.target }}.com"
           fi
