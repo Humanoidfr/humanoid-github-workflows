@@ -78,8 +78,11 @@ jobs:
                 return [];
               }
               const [owner, repo] = name.split('/');
-              const fromCommit = version_base.split(' ')[1];
-              const toCommit = version_target.split(' ')[1];
+              const fromCommit = version_base?.split(' ')[1];
+              const toCommit = version_target?.split(' ')[1];
+              if (!fromCommit || !toCommit) {
+                return [];
+              }
               try {
                 const { data } = await github.rest.repos.compareCommits({
                   owner: 'Humanoidfr',
