@@ -16,7 +16,7 @@ jobs:
         if: ${{ steps.branch-names.outputs.current_branch == 'update-dependencies' }}
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.sha }}
 
       - name: Get git commit header
         if: ${{ steps.branch-names.outputs.current_branch == 'update-dependencies' }}
