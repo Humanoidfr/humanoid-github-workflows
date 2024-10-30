@@ -123,7 +123,9 @@ jobs:
             }
 
             async function run(diff) {
-              const composerDiffPackages = Object.values(diff.packages);
+              const composerDiffPackages = Object.values(diff.packages).sort((a, b) =>
+                a.name.startsWith('humanoid/') ? -1 : 1;
+              );
 
               const markDown = [`# Update summary of ${process.env.NOW}`];
               markDown.push(``);
