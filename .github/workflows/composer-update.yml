@@ -34,10 +34,21 @@ jobs:
           fetch-depth: 0
           ref: main
 
+      # Set PHP version as an environment variable
+      - name: Set PHP version
+        run: |
+          if [ -f .php-version ]; then
+            CURRENT_PHP_VERSION=$(cat .php-version)
+          else
+            CURRENT_PHP_VERSION=${{ inputs.PHP_VERSION }}
+          fi
+
+          echo "PHP_VERSION=$CURRENT_PHP_VERSION" >> "$GITHUB_ENV"
+
       - name: Composer setup
         uses: Humanoidfr/humanoid-github-workflows/.github/actions/composer@main
         with:
-          PHP_VERSION: ${{ inputs.PHP_VERSION }}
+          PHP_VERSION: ${{ env.PHP_VERSION }}
           COMPOSER_CONFIG: ${{ vars.COMPOSER_CONFIG_JSON }}
           INSTALL_AND_CACHE: false
 
