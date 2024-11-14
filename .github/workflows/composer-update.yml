@@ -133,7 +133,7 @@ jobs:
                 const packageDiff = await getPackageDiff(pack);
                 markDown.push(...packageDiff);
               }
-              return markDown.join('\n');
+              return markDown.join('\n').replace(/"/g, '\\"');
             }
             return run(composerDiff);
 
