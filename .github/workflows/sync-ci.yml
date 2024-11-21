@@ -1,0 +1,25 @@
+name: Sync GitHub
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+
+  sync-templates:
+    name: Sync GitHub Templates
+    runs-on: ubuntu-latest
+    if: ${{ github.repository_owner == 'Humanoidfr' }}
+    steps:
+      - name: Sync files
+        uses: adrianjost/files-sync-action@v2.1.0
+        with:
+          SRC_REPO: Humanoidfr/github-templates
+          FILE_PATTERNS: |
+            ^.github/pull_request_template.md
+          TARGET_REPOS: |
+            Humanoidfr/humanoid-core
+          COMMIT_MESSAGE: "ci: Update pull request template"
+          GITHUB_TOKEN: ${{ secrets.SYNC_REPOS }}
