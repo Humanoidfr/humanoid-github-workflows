@@ -108,7 +108,7 @@ jobs:
                 const { commits } = data;
 
                 const commitsFormattedList = commits.map((commit) => {
-                  const commitSubject = ${commit.commit.message.split('\n')[0]};
+                  const commitSubject = commit.commit.message.split('\n')[0];
                   const regex = /\(#(\d+)\)$/s;
                   const replacedCommitSubject = commitSubject.replace(regex, `(https://github.com/${owner}/${repo}/pull/$1)`);
                   return `* ${replacedCommitSubject} ([${commit.sha}](${
