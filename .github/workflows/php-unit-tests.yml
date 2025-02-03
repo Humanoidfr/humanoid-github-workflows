@@ -10,7 +10,7 @@ on:
         type: string
       PHP_VERSION:
         description: PHP version with which the static code analysis is to be executed.
-        default: "8.1"
+        default: "8.2"
         required: false
         type: string
       COMPOSER_ARGS:
