@@ -55,6 +55,12 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Check existence of composer.json & phpunit.xml.dist files
+        id: check_files
+        uses: andstor/file-existence-action@v3
+        with:
+          files: "composer.json, phpunit.xml.dist, phpunit.xml"
+
       - name: Composer setup
         uses: Humanoidfr/humanoid-github-workflows/.github/actions/composer@main
         with:
@@ -62,7 +68,9 @@ jobs:
           COMPOSER_CONFIG: ${{ vars.COMPOSER_CONFIG_JSON }}
 
       - name: Set up problem matchers for PHPUnit
+        if: steps.check_files.outputs.files_exists == 'true'
         run: echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
 
       - name: Run PHPUnit
+        if: steps.check_files.outputs.files_exists == 'true'
         run: ./vendor/bin/phpunit ${{ inputs.PHPUNIT_ARGS }}
