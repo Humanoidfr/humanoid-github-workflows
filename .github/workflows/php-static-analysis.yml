@@ -29,6 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       COMPOSER_AUTH: '${{ secrets.COMPOSER_AUTH_JSON }}'
+      PHPSTAN_EDITOR_URL: 'phpstorm://open?file=%file%&line=%line%'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
