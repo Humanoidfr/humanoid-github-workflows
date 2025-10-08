@@ -161,7 +161,7 @@ jobs:
 
           echo "${{ steps.summary.outputs.result }}" | cat - CHANGELOG.md > temp && mv temp CHANGELOG.md
 
-      - uses: peter-evans/create-pull-request@v6
+      - uses: peter-evans/create-pull-request@v7
         if: ${{ steps.composer_diff.outputs.composer_diff_exit_code != 0 }}
         env:
           NOW: ${{ env.NOW }}
