@@ -14,7 +14,7 @@ jobs:
 
       - name: Checkout
         if: ${{ steps.branch-names.outputs.current_branch == 'update-dependencies' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ github.sha }}
 

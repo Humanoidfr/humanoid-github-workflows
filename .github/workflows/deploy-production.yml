@@ -37,7 +37,7 @@ jobs:
         name: production
         url: ${{ inputs.URL }}
       steps:
-        - uses: actions/checkout@v4
+        - uses: actions/checkout@v5
 
         - uses: webfactory/ssh-agent@v0.8.0
           with:

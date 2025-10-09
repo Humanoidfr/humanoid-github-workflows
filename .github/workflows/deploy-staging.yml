@@ -64,7 +64,7 @@ jobs:
       url: ${{ needs.prepare-url.outputs.url }}
     steps:
       - name: Checkout Humanoid CI
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: Humanoidfr/humanoid-ci
           token: ${{ secrets.token }}
