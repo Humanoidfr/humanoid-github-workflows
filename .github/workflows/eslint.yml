@@ -21,7 +21,7 @@ jobs:
             **/*.js
       - name: Set up Node
         if: steps.changed-files.outputs.any_changed == 'true'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 20
       - name: Set up NPM auth
