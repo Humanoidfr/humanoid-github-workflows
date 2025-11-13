@@ -11,6 +11,11 @@ inputs:
     default: "composer"
     required: false
     type: string
+  PHP_EXTENSIONS:
+    description: PHP extensions
+    default: ""
+    required: false
+    type: string
   COMPOSER_ARGS:
     description: Set of arguments passed to Composer.
     default: '--prefer-dist --no-scripts'
@@ -39,6 +44,7 @@ runs:
       with:
         php-version: ${{ inputs.PHP_VERSION }}
         tools: ${{ inputs.PHP_TOOLS }}
+        extensions: ${{ inputs.PHP_EXTENSIONS }}
 
     - name: Set Composer global config
       shell: bash

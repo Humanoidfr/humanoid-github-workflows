@@ -7,6 +7,11 @@ on:
         default: "8.1"
         required: false
         type: string
+      PHP_EXTENSIONS:
+        description: PHP extensions
+        default: ""
+        required: false
+        type: string
     secrets:
       COMPOSER_AUTH_JSON:
         description: Authentication for privately hosted packages and repositories as a JSON formatted object.
@@ -49,6 +54,7 @@ jobs:
         uses: Humanoidfr/humanoid-github-workflows/.github/actions/composer@main
         with:
           PHP_VERSION: ${{ env.PHP_VERSION }}
+          PHP_EXTENSIONS: ${{ inputs.PHP_EXTENSIONS }}
           COMPOSER_CONFIG: ${{ vars.COMPOSER_CONFIG_JSON }}
           INSTALL_AND_CACHE: false
 
