@@ -44,7 +44,7 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
 
-      - uses: webfactory/ssh-agent@v0.8.0
+      - uses: webfactory/ssh-agent@v0.9.1
         if: ${{ inputs.needs-auth }}
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
