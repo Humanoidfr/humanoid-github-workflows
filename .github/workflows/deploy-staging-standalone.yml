@@ -1,0 +1,248 @@
+name: Deploy to staging
+
+on:
+  workflow_call:
+    inputs:
+      targets:
+        description: 'JSON array of deployment targets'
+        required: true
+        type: string
+    secrets:
+      token:
+        required: true
+      staging-token:
+        required: true
+      staging-mad-token:
+        required: true
+
+jobs:
+  setup-checkbox:
+    name: Setup Staging Checkbox
+    if: github.event.action == 'opened'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    steps:
+      - name: Create staging environment checkbox
+        uses: wadackel/checkbox-workflow-action@v1
+        with:
+          id: staging-deployment
+          number: ${{ github.event.pull_request.number }}
+          token: ${{ secrets.token }}
+          config: |
+            [
+              {"deploy-staging": "Deploy staging environment"}
+            ]
+          message: |
+            ## Deployment Options
+
+            {{body}}
+
+            Check the box above to create a staging environment for this PR.
+            Once created, the environment will be automatically updated on each push.
+
+  check-deployment:
+    name: Check Deployment Status
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    outputs:
+      should-deploy: ${{ steps.parse-state.outputs.checked }}
+      environment-exists: ${{ steps.check-env.outputs.exists }}
+      targets: ${{ steps.set-targets.outputs.targets }}
+      pr-name: ${{ steps.check-env.outputs.head-ref }}
+      pr-url: ${{ steps.check-env.outputs.pr-url }}
+      pr-body: ${{ steps.check-env.outputs.pr-body }}
+      pr-avatar: ${{ steps.check-env.outputs.pr-avatar }}
+    steps:
+      - name: Check checkbox state
+        id: checkbox-state
+        uses: wadackel/checkbox-workflow-action@v1
+        with:
+          id: staging-deployment
+          number: ${{ github.event.pull_request.number || github.event.issue.number }}
+          token: ${{ secrets.token }}
+
+      - name: Parse checkbox state
+        id: parse-state
+        run: |
+          STATE='${{ steps.checkbox-state.outputs.state }}'
+          CHECKED=$(echo "$STATE" | jq -r '.["deploy-staging"]')
+          echo "checked=$CHECKED" >> $GITHUB_OUTPUT
+          echo "Deploy staging checkbox is: $CHECKED"
+
+      - name: Check if environment already exists
+        id: check-env
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.token }}
+          script: |
+            try {
+              const { data: environments } = await github.rest.repos.getAllEnvironments({
+                owner: context.repo.owner,
+                repo: context.repo.repo
+              });
+
+              // Get PR data - different location for issue_comment vs pull_request events
+              let headRef, prUrl, prBody, prAvatar;
+
+              if (context.eventName === 'pull_request') {
+                headRef = context.payload.pull_request.head.ref;
+                prUrl = context.payload.pull_request.html_url;
+                prBody = context.payload.pull_request.body || '';
+                prAvatar = context.payload.pull_request.user.avatar_url;
+              } else if (context.eventName === 'issue_comment') {
+                // For issue_comment, we need to fetch the PR details
+                const prNumber = context.payload.issue.number;
+                const { data: pr } = await github.rest.pulls.get({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: prNumber
+                });
+                headRef = pr.head.ref;
+                prUrl = pr.html_url;
+                prBody = pr.body || '';
+                prAvatar = pr.user.avatar_url;
+              }
+
+              if (!headRef) {
+                console.log('Could not determine head ref');
+                core.setOutput('exists', 'false');
+                return;
+              }
+
+              // Environment names are slugified from branch names
+              const envPrefix = `staging-${headRef}`;
+
+              const exists = environments.environments.some(env => {
+                return env.name.startsWith(envPrefix);
+              });
+
+              core.setOutput('exists', exists ? 'true' : 'false');
+              core.setOutput('head-ref', headRef);
+              core.setOutput('pr-url', prUrl);
+              core.setOutput('pr-body', prBody);
+              core.setOutput('pr-avatar', prAvatar);
+
+              console.log(`Head ref: ${headRef}`);
+              console.log(`Checking for environment starting with: ${envPrefix}`);
+              console.log(`Environment exists: ${exists}`);
+
+              if (exists) {
+                const matchingEnvs = environments.environments
+                  .filter(env => env.name.startsWith(envPrefix))
+                  .map(env => env.name);
+                console.log(`Found environments: ${matchingEnvs.join(', ')}`);
+              }
+            } catch (error) {
+              console.log('Error checking environment:', error);
+              core.setOutput('exists', 'false');
+            }
+
+      - name: Set deployment targets
+        id: set-targets
+        run: |
+          # Use input targets or default
+          TARGETS='${{ inputs.targets }}'
+          echo "targets=$TARGETS" >> $GITHUB_OUTPUT
+
+  deploy:
+    name: Deploy Staging
+    if: |
+      github.event.action != 'closed' &&
+      needs.check-deployment.outputs.pr-name != '' &&
+      (needs.check-deployment.outputs.should-deploy == 'true' ||
+       needs.check-deployment.outputs.environment-exists == 'true')
+    needs: check-deployment
+    runs-on: self-hosted
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        target: ${{ fromJson(needs.check-deployment.outputs.targets) }}
+    environment:
+      name: staging-${{ needs.check-deployment.outputs.pr-name }} (${{ matrix.target }})
+      url: https://staging-${{ needs.check-deployment.outputs.pr-name }}.${{ matrix.target }}.${{ matrix.target == 'lemon' && 'fr' || (matrix.target == 'traack' && 'io' || 'com') }}
+    steps:
+      - name: Checkout Humanoid CI
+        uses: actions/checkout@v5
+        with:
+          repository: Humanoidfr/humanoid-ci
+          token: ${{ secrets.token }}
+          path: .github/actions/humanoid-ci
+
+      - name: Create "${{ needs.check-deployment.outputs.pr-name }}" ${{ matrix.target }} staging environment
+        if: ${{ needs.check-deployment.outputs.environment-exists == 'false' && (github.event.action == 'opened' || github.event.action == 'reopened' || github.event.action == 'edited') }}
+        env:
+            HUMANOID_TOKEN: ${{ secrets.staging-token }}
+            MADMOIZELLE_TOKEN: ${{ secrets.staging-mad-token }}
+            IS_WOODY: true
+        run: |
+            python3 ./.github/actions/humanoid-ci/scripts/preprod.py clone ${{ matrix.target }} ${{ needs.check-deployment.outputs.pr-name }} ${{ needs.check-deployment.outputs.pr-name }} "${{ needs.check-deployment.outputs.pr-url }}" '${{ needs.check-deployment.outputs.pr-body }}' "${{ needs.check-deployment.outputs.pr-avatar }}"
+
+      - name: Update "${{ needs.check-deployment.outputs.pr-name }}" ${{ matrix.target }} staging environment
+        if: ${{ needs.check-deployment.outputs.environment-exists == 'true' && (github.event.action == 'opened' || github.event.action == 'reopened' || github.event.action == 'synchronize') }}
+        env:
+            HUMANOID_TOKEN: ${{ secrets.staging-token }}
+            MADMOIZELLE_TOKEN: ${{ secrets.staging-mad-token }}
+            IS_WOODY: true
+        run: |
+            python3 ./.github/actions/humanoid-ci/scripts/preprod.py clone ${{ matrix.target }} ${{ needs.check-deployment.outputs.pr-name }} ${{ needs.check-deployment.outputs.pr-name }} "${{ needs.check-deployment.outputs.pr-url }}" '${{ needs.check-deployment.outputs.pr-body }}' "${{ needs.check-deployment.outputs.pr-avatar }}"
+
+  cleanup:
+    name: Cleanup Staging
+    if: github.event.action == 'closed'
+    runs-on: self-hosted
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        target: ${{ fromJson(inputs.targets) }}
+    steps:
+      - name: Checkout Humanoid CI
+        uses: actions/checkout@v5
+        with:
+          repository: Humanoidfr/humanoid-ci
+          token: ${{ secrets.token }}
+          path: .github/actions/humanoid-ci
+
+      - name: Get PR branch name
+        id: get-branch
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.token }}
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber
+            });
+            core.setOutput('branch', pr.head.ref);
+
+      - name: Delete "${{ steps.get-branch.outputs.branch }}" ${{ matrix.target }} staging infrastructure
+        env:
+          HUMANOID_TOKEN: ${{ secrets.staging-token }}
+          MADMOIZELLE_TOKEN: ${{ secrets.staging-mad-token }}
+          IS_WOODY: true
+        run: |
+          python3 ./.github/actions/humanoid-ci/scripts/preprod.py delete ${{ matrix.target }} ${{ steps.get-branch.outputs.branch }}
+
+      - name: Delete GitHub environment
+        uses: actions/github-script@v8
+        continue-on-error: true
+        with:
+          github-token: ${{ secrets.token }}
+          script: |
+            const envName = `staging-${{ steps.get-branch.outputs.branch }} (${{ matrix.target }})`;
+            try {
+              await github.rest.repos.deleteAnEnvironment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                environment_name: envName
+              });
+              console.log(`Deleted environment: ${envName}`);
+            } catch (error) {
+              console.log(`Could not delete environment ${envName}: ${error.message}`);
+            }
