@@ -23,6 +23,11 @@ on:
         default: '--testdox'
         required: false
         type: string
+      TESTKIT:
+        description: Require mantle-framework/testkit package.
+        default: false
+        required: false
+        type: boolean
     secrets:
       COMPOSER_AUTH_JSON:
         description: Authentication for privately hosted packages and repositories as a JSON formatted object.
@@ -66,6 +71,10 @@ jobs:
         with:
           PHP_VERSION: ${{ inputs.PHP_VERSION }}
           COMPOSER_CONFIG: ${{ vars.COMPOSER_CONFIG_JSON }}
+
+      - name: Install Testkit package
+        if: ${{ inputs.TESTKIT == true && steps.check_files.outputs.files_exists == 'true' }}
+        run: composer require --dev mantle-framework/testkit
 
       - name: Set up problem matchers for PHPUnit
         if: steps.check_files.outputs.files_exists == 'true'
