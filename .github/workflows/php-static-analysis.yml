@@ -18,6 +18,11 @@ on:
         default: '--error-format=checkstyle'
         required: false
         type: string
+      WORKING_DIRECTORY:
+        description: The working directory where to run the static analysis.
+        default: '.'
+        required: false
+        type: string
     secrets:
       COMPOSER_AUTH_JSON:
         description: Authentication for privately hosted packages and repositories as a JSON formatted object.
@@ -27,6 +32,10 @@ jobs:
   php-static-analysis:
     name: PHP Static analysis
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.WORKING_DIRECTORY }}
     env:
       COMPOSER_AUTH: '${{ secrets.COMPOSER_AUTH_JSON }}'
       PHPSTAN_EDITOR_URL: 'phpstorm://open?file=%file%&line=%line%'
@@ -42,11 +51,19 @@ jobs:
           PHP_VERSION: ${{ inputs.PHP_VERSION }}
           PHP_TOOLS: "composer, cs2pr"
           COMPOSER_CONFIG: ${{ vars.COMPOSER_CONFIG_JSON }}
+          WORKING_DIRECTORY: ${{ inputs.WORKING_DIRECTORY }}
 
       - name: Get changed files
         id: changed-files
-        uses: tj-actions/changed-files@v45
+        uses: tj-actions/changed-files@v47
+        with:
+          path: ${{ inputs.WORKING_DIRECTORY }}
+          files: |
+            **/*.php
 
       - name: Run PHPStan
         if: steps.changed-files.outputs.all_changed_files != ''
-        run: ./vendor/bin/phpstan analyse ${{ inputs.PHPSTAN_ARGS }} ${{ join(steps.changed-files.outputs.all_changed_files, ' ') }} | cs2pr
+        run: |
+          ./vendor/bin/phpstan analyse ${{ inputs.PHPSTAN_ARGS }} ${{ steps.changed-files.outputs.all_changed_files }} \
+            | sed 's|name="|name="${{ inputs.WORKING_DIRECTORY }}/|g' \
+            | cs2pr

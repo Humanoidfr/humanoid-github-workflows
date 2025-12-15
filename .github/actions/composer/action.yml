@@ -30,6 +30,11 @@ inputs:
     description: Composer configuration as a JSON formatted object.
     required: false
     type: string
+  WORKING_DIRECTORY:
+    description: The working directory where to run the static analysis.
+    default: '.'
+    required: false
+    type: string
 
 secrets:
   COMPOSER_AUTH_JSON:
@@ -57,3 +62,4 @@ runs:
       if: ${{ inputs.INSTALL_AND_CACHE == 'true' }}
       with:
         composer-options: ${{ inputs.COMPOSER_ARGS }}
+        working-directory: ${{ inputs.WORKING_DIRECTORY }}
