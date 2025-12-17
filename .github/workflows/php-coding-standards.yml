@@ -23,6 +23,11 @@ on:
         default: "--graceful-warnings ./phpcs-report.xml"
         required: false
         type: string
+      WORKING_DIRECTORY:
+        description: The working directory where to run the coding standards analysis.
+        default: '.'
+        required: false
+        type: string
     secrets:
       COMPOSER_AUTH_JSON:
         description: Authentication for privately hosted packages and repositories as a JSON formatted object.
@@ -32,6 +37,10 @@ jobs:
   php-coding-standards:
     name: PHP Coding standards
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.WORKING_DIRECTORY }}
     env:
       COMPOSER_AUTH: "${{ secrets.COMPOSER_AUTH_JSON }}"
     steps:
@@ -46,15 +55,22 @@ jobs:
           PHP_VERSION: ${{ inputs.PHP_VERSION }}
           PHP_TOOLS: "composer, cs2pr"
           COMPOSER_CONFIG: ${{ vars.COMPOSER_CONFIG_JSON }}
+          WORKING_DIRECTORY: ${{ inputs.WORKING_DIRECTORY }}
 
       - name: Get changed files
         id: changed-files
-        uses: tj-actions/changed-files@v45
+        uses: tj-actions/changed-files@v47
+        with:
+          path: ${{ inputs.WORKING_DIRECTORY }}
+          files: |
+            **/*.php
 
       - name: Run PHP_CS
         if: steps.changed-files.outputs.all_changed_files != ''
         run: ./vendor/bin/phpcs ${{ inputs.PHPCS_ARGS }} ${{ join(steps.changed-files.outputs.all_changed_files, ' ') }}
 
       - name: Annotate PHP_CodeSniffer report
-        if: ${{ always() }}
-        run: cs2pr ${{ inputs.CS2PR_ARGS }}
+        if: ${{ always() && steps.changed-files.outputs.all_changed_files != '' }}
+        run: |
+          sed -i 's|name="|name="${{ inputs.WORKING_DIRECTORY }}/|g' ./phpcs-report.xml
+          cs2pr ${{ inputs.CS2PR_ARGS }}
