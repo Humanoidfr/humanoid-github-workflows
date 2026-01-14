@@ -60,26 +60,39 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Check existence of composer.json & phpunit.xml.dist files
-        id: check_files
+      - name: Check existence of composer.json
+        id: check_composer
         uses: andstor/file-existence-action@v3
         with:
-          files: "composer.json, phpunit.xml.dist, phpunit.xml"
+          files: "composer.json"
+
+      - name: Check existence of phpunit.xml.dist
+        id: check_phpunit_dist
+        uses: andstor/file-existence-action@v3
+        with:
+          files: "phpunit.xml.dist"
+
+      - name: Check existence of phpunit.xml
+        id: check_phpunit
+        uses: andstor/file-existence-action@v3
+        with:
+          files: "phpunit.xml"
 
       - name: Composer setup
+        if: steps.check_composer.outputs.files_exists == 'true' && (steps.check_phpunit_dist.outputs.files_exists == 'true' || steps.check_phpunit.outputs.files_exists == 'true')
         uses: Humanoidfr/humanoid-github-workflows/.github/actions/composer@main
         with:
           PHP_VERSION: ${{ inputs.PHP_VERSION }}
           COMPOSER_CONFIG: ${{ vars.COMPOSER_CONFIG_JSON }}
 
       - name: Install Testkit package
-        if: ${{ inputs.TESTKIT == true && steps.check_files.outputs.files_exists == 'true' }}
+        if: inputs.TESTKIT == true && steps.check_composer.outputs.files_exists == 'true' && (steps.check_phpunit_dist.outputs.files_exists == 'true' || steps.check_phpunit.outputs.files_exists == 'true')
         run: composer require --dev mantle-framework/testkit
 
       - name: Set up problem matchers for PHPUnit
-        if: steps.check_files.outputs.files_exists == 'true'
+        if: steps.check_composer.outputs.files_exists == 'true' && (steps.check_phpunit_dist.outputs.files_exists == 'true' || steps.check_phpunit.outputs.files_exists == 'true')
         run: echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
 
       - name: Run PHPUnit
-        if: steps.check_files.outputs.files_exists == 'true'
+        if: steps.check_composer.outputs.files_exists == 'true' && (steps.check_phpunit_dist.outputs.files_exists == 'true' || steps.check_phpunit.outputs.files_exists == 'true')
         run: ./vendor/bin/phpunit ${{ inputs.PHPUNIT_ARGS }}
