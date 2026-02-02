@@ -20,7 +20,7 @@ on:
         type: string
       WORKING_DIRECTORY:
         description: The working directory where to run the static analysis.
-        default: '.'
+        default: ''
         required: false
         type: string
     secrets:
