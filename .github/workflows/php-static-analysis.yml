@@ -20,7 +20,7 @@ on:
         type: string
       WORKING_DIRECTORY:
         description: The working directory where to run the static analysis.
-        default: ''
+        default: '.'
         required: false
         type: string
     secrets:
@@ -64,6 +64,11 @@ jobs:
       - name: Run PHPStan
         if: steps.changed-files.outputs.all_changed_files != ''
         run: |
-          ./vendor/bin/phpstan analyse ${{ inputs.PHPSTAN_ARGS }} ${{ steps.changed-files.outputs.all_changed_files }} \
-            | sed 's|name="|name="${{ inputs.WORKING_DIRECTORY }}/|g' \
-            | cs2pr
+          if [ "${{ inputs.WORKING_DIRECTORY }}" != "." ] && [ -n "${{ inputs.WORKING_DIRECTORY }}" ]; then
+            ./vendor/bin/phpstan analyse ${{ inputs.PHPSTAN_ARGS }} ${{ steps.changed-files.outputs.all_changed_files }} \
+              | sed 's|name="|name="${{ inputs.WORKING_DIRECTORY }}/|g' \
+              | cs2pr
+          else
+            ./vendor/bin/phpstan analyse ${{ inputs.PHPSTAN_ARGS }} ${{ steps.changed-files.outputs.all_changed_files }} \
+              | cs2pr
+          fi

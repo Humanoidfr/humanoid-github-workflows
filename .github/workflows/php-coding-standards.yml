@@ -72,5 +72,7 @@ jobs:
       - name: Annotate PHP_CodeSniffer report
         if: ${{ always() && steps.changed-files.outputs.all_changed_files != '' }}
         run: |
-          sed -i 's|name="|name="${{ inputs.WORKING_DIRECTORY }}/|g' ./phpcs-report.xml
+          if [ "${{ inputs.WORKING_DIRECTORY }}" != "." ] && [ -n "${{ inputs.WORKING_DIRECTORY }}" ]; then
+            sed -i 's|name="|name="${{ inputs.WORKING_DIRECTORY }}/|g' ./phpcs-report.xml
+          fi
           cs2pr ${{ inputs.CS2PR_ARGS }}
