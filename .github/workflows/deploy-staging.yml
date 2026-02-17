@@ -40,14 +40,15 @@ jobs:
       - name: Set URL
         id: set-url
         run: |
-          if [ "${{ matrix.target }}" == "lemon" ]; then
-            DOMAIN="fr"
+          if [ "${{ matrix.target }}" == "lemon-v2" ]; then
+            echo "url=https://staging-${{ inputs.name }}-beta.lemon.fr" >> $GITHUB_OUTPUT
+          elif [ "${{ matrix.target }}" == "lemon" ]; then
+            echo "url=https://staging-${{ inputs.name }}.lemon.fr" >> $GITHUB_OUTPUT
           elif [ "${{ matrix.target }}" == "traack" ]; then
-            DOMAIN="io"
+            echo "url=https://staging-${{ inputs.name }}.traack.io" >> $GITHUB_OUTPUT
           else
-            DOMAIN="com"
+            echo "url=https://staging-${{ inputs.name }}.${{ matrix.target }}.com" >> $GITHUB_OUTPUT
           fi
-          echo "url=https://staging-${{ inputs.name }}.${{ matrix.target }}.$DOMAIN" >> $GITHUB_OUTPUT
   
 
   deploy:
