@@ -23,6 +23,11 @@ on:
         default: '--testdox'
         required: false
         type: string
+      WORKING_DIRECTORY:
+        description: The working directory where to run the unit tests.
+        default: '.'
+        required: false
+        type: string
       TESTKIT:
         description: Require mantle-framework/testkit package.
         default: false
@@ -37,6 +42,10 @@ jobs:
   php-unit-tests:
     name: PHP Unit Tests
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.WORKING_DIRECTORY }}
     services:
       mysql:
         image: mysql:5.7
@@ -64,19 +73,19 @@ jobs:
         id: check_composer
         uses: andstor/file-existence-action@v3
         with:
-          files: "composer.json"
+          files: "${{ inputs.WORKING_DIRECTORY }}/composer.json"
 
       - name: Check existence of phpunit.xml.dist
         id: check_phpunit_dist
         uses: andstor/file-existence-action@v3
         with:
-          files: "phpunit.xml.dist"
+          files: "${{ inputs.WORKING_DIRECTORY }}/phpunit.xml.dist"
 
       - name: Check existence of phpunit.xml
         id: check_phpunit
         uses: andstor/file-existence-action@v3
         with:
-          files: "phpunit.xml"
+          files: "${{ inputs.WORKING_DIRECTORY }}/phpunit.xml"
 
       - name: Composer setup
         if: steps.check_composer.outputs.files_exists == 'true' && (steps.check_phpunit_dist.outputs.files_exists == 'true' || steps.check_phpunit.outputs.files_exists == 'true')
@@ -84,6 +93,7 @@ jobs:
         with:
           PHP_VERSION: ${{ inputs.PHP_VERSION }}
           COMPOSER_CONFIG: ${{ vars.COMPOSER_CONFIG_JSON }}
+          WORKING_DIRECTORY: ${{ inputs.WORKING_DIRECTORY }}
 
       - name: Install Testkit package
         if: inputs.TESTKIT == true && steps.check_composer.outputs.files_exists == 'true' && (steps.check_phpunit_dist.outputs.files_exists == 'true' || steps.check_phpunit.outputs.files_exists == 'true')
