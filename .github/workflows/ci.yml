@@ -25,7 +25,6 @@ on:
         required: true
       staging-token:
         required: true
-      staging-mad-token:
         required: true
       private-key:
         required: true
@@ -225,7 +224,6 @@ jobs:
         if: ${{ inputs.action == 'opened' || inputs.action == 'reopened' || inputs.action == 'synchronize' }}
         env:
           HUMANOID_TOKEN: ${{ secrets.staging-token }}
-          MADMOIZELLE_TOKEN: ${{ secrets.staging-mad-token }}
           IS_WOODY: true
         run: |
           python3 ./.github/actions/humanoid-ci/scripts/preprod.py clone ${{ matrix.target }} ${{ inputs.name }} ${{ inputs.name }} "${{ github.event.pull_request.html_url }}" ${{ toJson(github.event.pull_request.body) }} "${{ github.event.pull_request.user.avatar_url }}"
@@ -234,7 +232,6 @@ jobs:
         if: ${{ inputs.action == 'closed' }}
         env:
           HUMANOID_TOKEN: ${{ secrets.staging-token }}
-          MADMOIZELLE_TOKEN: ${{ secrets.staging-mad-token }}
           IS_WOODY: true
         run: |
           python3 ./.github/actions/humanoid-ci/scripts/preprod.py delete ${{ matrix.target }} ${{ inputs.name }}
