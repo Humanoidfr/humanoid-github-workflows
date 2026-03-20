@@ -10,7 +10,7 @@ jobs:
     steps:
       - name: Get branch names
         id: branch-names
-        uses: tj-actions/branch-names@v8
+        uses: tj-actions/branch-names@v9
 
       - name: Checkout
         if: ${{ steps.branch-names.outputs.current_branch == 'update-dependencies' }}
