@@ -58,7 +58,7 @@ runs:
         COMPOSER_CONFIG: ${{ inputs.COMPOSER_CONFIG }}
 
     - name: Install Composer dependencies
-      uses: ramsey/composer-install@v3
+      uses: ramsey/composer-install@v4
       if: ${{ inputs.INSTALL_AND_CACHE == 'true' }}
       with:
         composer-options: ${{ inputs.COMPOSER_ARGS }}

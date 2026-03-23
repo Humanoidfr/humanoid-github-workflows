@@ -10,7 +10,7 @@ jobs:
     steps:
       - name: Get branch names
         id: branch-names
-        uses: tj-actions/branch-names@v8
+        uses: tj-actions/branch-names@v9
 
       - name: Checkout
         if: ${{ steps.branch-names.outputs.current_branch == 'update-dependencies' }}
@@ -27,7 +27,7 @@ jobs:
           cb="$(git show -s --format=%b)"
           echo "commit_body<<EOF"$'\n'"$cb"$'\n'EOF >> $GITHUB_OUTPUT
 
-      - uses: actions/github-script@v7
+      - uses: actions/github-script@v8
         if: ${{ steps.branch-names.outputs.current_branch == 'update-dependencies' }}
         id: release-tag
         env:

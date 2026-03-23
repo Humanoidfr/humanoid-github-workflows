@@ -44,7 +44,7 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
 
-      - uses: webfactory/ssh-agent@v0.9.1
+      - uses: webfactory/ssh-agent@v0.10.0
         if: ${{ inputs.needs-auth }}
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
@@ -56,7 +56,7 @@ jobs:
       - name: Build assets
         run: ${{ inputs.build-cmd }}
 
-      - uses: stefanzweifel/git-auto-commit-action@v5
+      - uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: "chore: 🤖 Build assets"
           # file_pattern: ${{ inputs.file-pattern }}
