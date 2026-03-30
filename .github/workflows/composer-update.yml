@@ -12,6 +12,11 @@ on:
         default: ""
         required: false
         type: string
+      BYPASS_SECURITY:
+        description: Bypass composer security audit during update
+        default: false
+        required: false
+        type: boolean
     secrets:
       COMPOSER_AUTH_JSON:
         description: Authentication for privately hosted packages and repositories as a JSON formatted object.
@@ -58,7 +63,7 @@ jobs:
           COMPOSER_CONFIG: ${{ vars.COMPOSER_CONFIG_JSON }}
           INSTALL_AND_CACHE: false
 
-      - run: composer update --no-interaction --no-scripts --prefer-dist --no-dev
+      - run: composer update --no-interaction --no-scripts --prefer-dist --no-dev ${{ inputs.BYPASS_SECURITY && '--no-audit' || '' }}
 
       - name: Generate composer diff
         id: composer_diff
