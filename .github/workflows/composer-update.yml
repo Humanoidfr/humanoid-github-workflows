@@ -63,6 +63,10 @@ jobs:
           COMPOSER_CONFIG: ${{ vars.COMPOSER_CONFIG_JSON }}
           INSTALL_AND_CACHE: false
 
+      - name: Disable composer security block
+        if: ${{ inputs.BYPASS_SECURITY }}
+        run: composer config audit.block-insecure false
+
       - run: composer update --no-interaction --no-scripts --prefer-dist --no-dev ${{ inputs.BYPASS_SECURITY && '--no-audit' || '' }}
 
       - name: Generate composer diff
