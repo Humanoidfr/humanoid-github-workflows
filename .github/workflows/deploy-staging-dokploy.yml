@@ -1,0 +1,229 @@
+name: Deploy to staging (Dokploy)
+
+on:
+  workflow_call:
+    inputs:
+      targets:
+        description: 'JSON array of site names, e.g. ["numerama"] or ["numerama","frandroid"]'
+        required: true
+        type: string
+      name:
+        description: 'Staging instance name (usually PR number or branch slug)'
+        type: string
+        default: ''
+      action:
+        description: 'opened|reopened|synchronize|closed'
+        type: string
+        required: true
+      branch:
+        description: 'Branch to deploy (defaults to head_ref or ref_name)'
+        type: string
+        default: ''
+    secrets:
+      dokploy-api-key:
+        required: true
+
+env:
+  DOKPLOY_API: https://dokployapi.humanoid.fr/api
+  DOKPLOY_GITHUB_ID: qKcI0oYjbardpr3aptn46
+
+jobs:
+  staging:
+    name: ${{ matrix.target }} — ${{ inputs.action }}
+    if: inputs.name != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        target: ${{ fromJson(inputs.targets) }}
+      fail-fast: false
+    env:
+      SITE: ${{ matrix.target }}
+      INSTANCE_NAME: ${{ inputs.name }}
+      DEPLOY_BRANCH: ${{ inputs.branch || github.head_ref || github.ref_name }}
+    steps:
+      - name: Resolve site config
+        id: config
+        run: |
+          declare -A PROJECT_IDS ENV_IDS HOST_BASES REPOS
+          PROJECT_IDS[numerama]="9mzIhukq5OSx7YbVMlnkG"
+          PROJECT_IDS[frandroid]="9ANJrneN-Oy_FcD3gtXeB"
+          PROJECT_IDS[lemon]="t4L0oMA79LzPfaLZpUBFD"
+          PROJECT_IDS[lemon-v2]="MMHW0cMuEHeKF1oVKgXw6"
+          PROJECT_IDS[orange]="FnKFML2vJGEteUIVLbP69"
+
+          ENV_IDS[numerama]="Ifj7wZYNpK9XmmdTjKgWc"
+          ENV_IDS[frandroid]="NA5WSfKQRrtN7s0NYhGCY"
+          ENV_IDS[lemon]="LvRzgiKkWcnpBLRibwo9m"
+          ENV_IDS[lemon-v2]="b53IINFFIWIun6RF9glAm"
+          ENV_IDS[orange]="FwdzzS1AGSJXasyDXqYyF"
+
+          HOST_BASES[numerama]="numerama.com"
+          HOST_BASES[frandroid]="frandroid.com"
+          HOST_BASES[lemon]="lemon.fr"
+          HOST_BASES[lemon-v2]="lemon.fr"
+          HOST_BASES[orange]="humanoid.fr"
+
+          REPOS[numerama]="numerama"
+          REPOS[frandroid]="frandroid"
+          REPOS[lemon]="lemon"
+          REPOS[lemon-v2]="lemon-v2"
+          REPOS[orange]="orange"
+
+          SITE_KEY="${SITE}"
+          if [[ -z "${PROJECT_IDS[$SITE_KEY]}" ]]; then
+            echo "::error::Unknown site: ${SITE}"
+            exit 1
+          fi
+
+          SLUG="$(echo "$INSTANCE_NAME" | sed 's/[^a-zA-Z0-9]/-/g' | cut -c1-30)"
+
+          # lemon-v2 uses a -beta suffix to avoid collision with lemon
+          if [[ "$SITE_KEY" == "lemon-v2" ]]; then
+            DOMAIN="${SLUG}-beta.staging.${HOST_BASES[$SITE_KEY]}"
+          else
+            DOMAIN="${SLUG}.staging.${HOST_BASES[$SITE_KEY]}"
+          fi
+
+          echo "project_id=${PROJECT_IDS[$SITE_KEY]}" >> "$GITHUB_OUTPUT"
+          echo "env_id=${ENV_IDS[$SITE_KEY]}" >> "$GITHUB_OUTPUT"
+          echo "host_base=${HOST_BASES[$SITE_KEY]}" >> "$GITHUB_OUTPUT"
+          echo "repo=${REPOS[$SITE_KEY]}" >> "$GITHUB_OUTPUT"
+          echo "slug=$SLUG" >> "$GITHUB_OUTPUT"
+          echo "domain=$DOMAIN" >> "$GITHUB_OUTPUT"
+          echo "compose_name=staging-${SLUG}" >> "$GITHUB_OUTPUT"
+          echo "dump_file=/data/dumps/${SITE_KEY}_extra_light.sql.gz" >> "$GITHUB_OUTPUT"
+
+      - name: Find existing compose
+        id: find
+        env:
+          COMPOSE_NAME: ${{ steps.config.outputs.compose_name }}
+          PROJECT_ID: ${{ steps.config.outputs.project_id }}
+        run: |
+          COMPOSE_ID=$(curl -sf "${DOKPLOY_API}/project.all" \
+            -H "x-api-key: ${{ secrets.dokploy-api-key }}" \
+            | jq -r --arg pid "$PROJECT_ID" --arg name "$COMPOSE_NAME" \
+              '[.[] | select(.projectId == $pid) | .environments[].compose[] | select(.name == $name) | .composeId] | first // empty')
+
+          echo "compose_id=$COMPOSE_ID" >> "$GITHUB_OUTPUT"
+          echo "exists=$( [ -n "$COMPOSE_ID" ] && echo true || echo false )" >> "$GITHUB_OUTPUT"
+
+      # ── DESTROY ────────────────────────────────
+      - name: Destroy staging
+        if: inputs.action == 'closed' && steps.find.outputs.exists == 'true'
+        env:
+          COMPOSE_ID: ${{ steps.find.outputs.compose_id }}
+        run: |
+          curl -sf -X POST "${DOKPLOY_API}/compose.stop" \
+            -H "x-api-key: ${{ secrets.dokploy-api-key }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"composeId\":\"${COMPOSE_ID}\"}" || true
+
+          curl -sf -X POST "${DOKPLOY_API}/compose.delete" \
+            -H "x-api-key: ${{ secrets.dokploy-api-key }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"composeId\":\"${COMPOSE_ID}\",\"deleteVolumes\":true}"
+
+          echo "::notice::Destroyed staging ${{ steps.config.outputs.compose_name }}"
+
+      # ── CREATE ─────────────────────────────────
+      - name: Create compose service
+        if: inputs.action != 'closed' && steps.find.outputs.exists == 'false'
+        id: create
+        env:
+          COMPOSE_NAME: ${{ steps.config.outputs.compose_name }}
+          ENV_ID: ${{ steps.config.outputs.env_id }}
+        run: |
+          RESULT=$(curl -sf -X POST "${DOKPLOY_API}/compose.create" \
+            -H "x-api-key: ${{ secrets.dokploy-api-key }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"name\":\"${COMPOSE_NAME}\",\"environmentId\":\"${ENV_ID}\",\"composeType\":\"docker-compose\"}")
+
+          COMPOSE_ID=$(echo "$RESULT" | jq -r '.composeId')
+          echo "compose_id=$COMPOSE_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Set compose ID
+        if: inputs.action != 'closed'
+        id: compose
+        run: |
+          ID="${{ steps.create.outputs.compose_id }}"
+          [ -z "$ID" ] && ID="${{ steps.find.outputs.compose_id }}"
+          echo "id=$ID" >> "$GITHUB_OUTPUT"
+
+      - name: Configure compose source
+        if: inputs.action != 'closed' && steps.find.outputs.exists == 'false'
+        env:
+          COMPOSE_ID: ${{ steps.compose.outputs.id }}
+          REPO: ${{ steps.config.outputs.repo }}
+        run: |
+          curl -sf -X POST "${DOKPLOY_API}/compose.update" \
+            -H "x-api-key: ${{ secrets.dokploy-api-key }}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"composeId\": \"${COMPOSE_ID}\",
+              \"sourceType\": \"github\",
+              \"repository\": \"${REPO}\",
+              \"owner\": \"Humanoidfr\",
+              \"branch\": \"${DEPLOY_BRANCH}\",
+              \"composePath\": \"./docker-compose.yml\",
+              \"githubId\": \"${DOKPLOY_GITHUB_ID}\",
+              \"autoDeploy\": true
+            }"
+
+      - name: Set environment variables
+        if: inputs.action != 'closed' && steps.find.outputs.exists == 'false'
+        env:
+          COMPOSE_ID: ${{ steps.compose.outputs.id }}
+          DOMAIN: ${{ steps.config.outputs.domain }}
+          DUMP_FILE: ${{ steps.config.outputs.dump_file }}
+        run: |
+          ENV_VARS="NPM_TOKEN=${{ secrets.NPM_TOKEN }}
+          DB_USER=${{ secrets.STAGING_DB_USER }}
+          DB_PASSWORD=${{ secrets.STAGING_DB_PASSWORD }}
+          MYSQL_ROOT_PASSWORD=${{ secrets.STAGING_MYSQL_ROOT_PASSWORD }}
+          DB_NAME=${SITE}
+          DB_HOST=mariadb
+          WP_HOME=https://${DOMAIN}
+          WP_ENVIRONMENT_TYPE=staging
+          HUMANOID_CACHE_DSN=redis://dragonfly:6379/4
+          OBJECT_CACHE_PRO_DSN=redis://dragonfly:6379/14
+          VARNISH_ENABLED=true
+          APP_WEBSITE=${SITE}
+          DB_DUMP_FILE=${DUMP_FILE}"
+
+          ENV_JSON=$(echo "$ENV_VARS" | sed '/^\s*$/d' | sed 's/^[[:space:]]*//' | jq -Rs .)
+
+          curl -sf -X POST "${DOKPLOY_API}/compose.update" \
+            -H "x-api-key: ${{ secrets.dokploy-api-key }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"composeId\":\"${COMPOSE_ID}\",\"env\":${ENV_JSON}}"
+
+      - name: Configure domain
+        if: inputs.action != 'closed' && steps.find.outputs.exists == 'false'
+        env:
+          COMPOSE_ID: ${{ steps.compose.outputs.id }}
+          DOMAIN: ${{ steps.config.outputs.domain }}
+        run: |
+          curl -sf -X POST "${DOKPLOY_API}/domain.create" \
+            -H "x-api-key: ${{ secrets.dokploy-api-key }}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"host\": \"${DOMAIN}\",
+              \"port\": 6081,
+              \"https\": true,
+              \"certificateType\": \"letsencrypt\",
+              \"composeId\": \"${COMPOSE_ID}\",
+              \"serviceName\": \"${SITE}\"
+            }"
+
+      - name: Deploy
+        if: inputs.action != 'closed'
+        env:
+          COMPOSE_ID: ${{ steps.compose.outputs.id }}
+        run: |
+          curl -sf -X POST "${DOKPLOY_API}/compose.deploy" \
+            -H "x-api-key: ${{ secrets.dokploy-api-key }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"composeId\":\"${COMPOSE_ID}\"}"
+
+          echo "::notice::Staging deployed at https://${{ steps.config.outputs.domain }}"
