@@ -54,7 +54,7 @@ jobs:
 
       - name: Create release
         if: ${{ steps.release-tag.outputs.result != '' }}
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           body: ${{ steps.commit-header.outputs.commit_body }}
           name: ${{ steps.release-tag.outputs.result }}
