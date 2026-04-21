@@ -1,0 +1,211 @@
+name: Bundle History
+
+on:
+    workflow_call:
+        inputs:
+            build_command:
+                description: 'Build command to run (e.g. npm run build:client)'
+                required: true
+                type: string
+            bundle_patterns:
+                description: 'JSON array of {name, glob} objects for bundle measurement'
+                required: true
+                type: string
+            node_version:
+                description: 'Node.js version to use'
+                required: false
+                type: string
+                default: '20'
+            npm_install_args:
+                description: 'Extra arguments for npm ci (e.g. --legacy-peer-deps)'
+                required: false
+                type: string
+                default: ''
+            update_readme:
+                description: 'Update the README bundle chart on main'
+                required: false
+                type: boolean
+                default: true
+            history_retention:
+                description: 'Maximum number of entries to keep in history'
+                required: false
+                type: number
+                default: 200
+        secrets:
+            GH_TOKEN:
+                description: 'GitHub token for private npm packages'
+                required: true
+
+permissions:
+    contents: write
+
+jobs:
+    record-sizes:
+        runs-on: self-hosted
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ inputs.node_version }}
+                  cache: 'npm'
+
+            - name: Create .npmrc
+              run: |
+                  echo "@humanoidfr:registry=http://npm.pkg.github.com/" > .npmrc
+                  echo "//npm.pkg.github.com/:_authToken=${{ secrets.GH_TOKEN }}" >> .npmrc
+
+            - name: Install dependencies
+              run: npm ci ${{ inputs.npm_install_args }}
+
+            - name: Build client
+              run: ${{ inputs.build_command }}
+
+            - name: Measure bundle sizes (raw + gzip)
+              run: |
+                  node -e "
+                    const fs = require('fs');
+                    const zlib = require('zlib');
+                    const { execSync } = require('child_process');
+                    const patterns = ${{ inputs.bundle_patterns }};
+                    const bundles = {};
+                    for (const p of patterns) {
+                      const files = execSync('ls ' + p.glob + ' 2>/dev/null || true', {encoding:'utf8'}).trim().split('\n').filter(Boolean);
+                      let size = 0, gzip = 0;
+                      for (const f of files) {
+                        try {
+                          const buf = fs.readFileSync(f);
+                          size += buf.length;
+                          gzip += zlib.gzipSync(buf, { level: 9 }).length;
+                        } catch {}
+                      }
+                      bundles[p.name] = { size, gzip };
+                    }
+                    fs.writeFileSync('/tmp/bundle-sizes.json', JSON.stringify(bundles));
+                    console.log(JSON.stringify(bundles, null, 2));
+                  "
+
+            - name: Update bundle history on gh-pages
+              run: |
+                  set -e
+
+                  REPO_URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+
+                  # Clone gh-pages or create it
+                  if git ls-remote --exit-code --heads "$REPO_URL" gh-pages > /dev/null 2>&1; then
+                    git clone --branch gh-pages --single-branch --depth 1 "$REPO_URL" gh-pages-dir
+                  else
+                    mkdir -p gh-pages-dir
+                    cd gh-pages-dir
+                    git init -b gh-pages
+                    git remote add origin "$REPO_URL"
+                    cd ..
+                  fi
+
+                  # Ensure directory exists
+                  mkdir -p gh-pages-dir/bundle-history
+
+                  RETENTION=${{ inputs.history_retention }}
+
+                  # Append sizes to history using Node
+                  node -e "
+                    const fs = require('fs');
+                    const historyPath = 'gh-pages-dir/bundle-history/data.json';
+
+                    let history = [];
+                    try { history = JSON.parse(fs.readFileSync(historyPath, 'utf8')); } catch {}
+
+                    const bundles = JSON.parse(fs.readFileSync('/tmp/bundle-sizes.json', 'utf8'));
+
+                    history.push({
+                      sha: '${{ github.sha }}'.slice(0, 7),
+                      date: new Date().toISOString(),
+                      bundles,
+                    });
+
+                    if (history.length > ${RETENTION}) history = history.slice(-${RETENTION});
+
+                    fs.writeFileSync(historyPath, JSON.stringify(history, null, 2));
+                    console.log('History now has ' + history.length + ' entries');
+                  "
+
+                  # Commit and push
+                  cd gh-pages-dir
+                  git config user.name "github-actions[bot]"
+                  git config user.email "github-actions[bot]@users.noreply.github.com"
+                  git add bundle-history/data.json
+                  git diff --cached --quiet && echo "No changes to commit" && exit 0
+                  git commit -m "chore: update bundle history [skip ci]"
+                  git push origin gh-pages
+
+            - name: Update README bundle chart on main
+              if: inputs.update_readme
+              run: |
+                  set -e
+
+                  REPO_URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+                  git clone --branch main --single-branch --depth 1 "$REPO_URL" main-dir
+
+                  node -e "
+                    const fs = require('fs');
+                    const historyPath = 'gh-pages-dir/bundle-history/data.json';
+                    const readmePath = 'main-dir/README.md';
+
+                    const START = '<!-- BUNDLE-CHART:START -->';
+                    const END = '<!-- BUNDLE-CHART:END -->';
+
+                    const entries = JSON.parse(fs.readFileSync(historyPath, 'utf8'));
+                    const data = entries.slice(-20);
+                    const latest = data[data.length - 1];
+
+                    const fmtKB = (b) => (b / 1024).toFixed(1);
+                    const sha = (s) => s.slice(0, 7);
+
+                    const xLabels = data.map(e => '\"' + sha(e.sha) + '\"').join(', ');
+                    const line = (key) => data.map(e => fmtKB(e.bundles[key]?.gzip || 0)).join(', ');
+
+                    const tableRows = Object.entries(latest.bundles)
+                      .map(([name, { size, gzip }]) => '| ' + name + ' | ' + fmtKB(size) + ' KB | ' + fmtKB(gzip) + ' KB |')
+                      .join('\n');
+
+                    const dateStr = new Date(latest.date).toLocaleDateString('fr-FR');
+
+                    const chart = '### Evolution du bundle (gzip)\n\n' +
+                      '\`\`\`mermaid\n' +
+                      '---\nconfig:\n    xyChart:\n        xAxis:\n            label: \"Commits\"\n        yAxis:\n            label: \"Taille gzip (KB)\"\n        chartOrientation: vertical\n---\n' +
+                      'xychart-beta\n' +
+                      '    x-axis [' + xLabels + ']\n' +
+                      '    line \"React JS\" [' + line('React bundle (JS)') + ']\n' +
+                      '    line \"Script JS\" [' + line('Script bundle (JS)') + ']\n' +
+                      '    line \"JS chunks\" [' + line('JS chunks') + ']\n' +
+                      '    line \"React CSS\" [' + line('React CSS') + ']\n' +
+                      '\`\`\`\n\n' +
+                      '### Snapshot actuel (\`' + sha(latest.sha) + '\` — ' + dateStr + ')\n\n' +
+                      '| Bundle | Taille brute | Gzip |\n' +
+                      '|--------|-------------|------|\n' +
+                      tableRows + '\n\n' +
+                      '> Mis a jour automatiquement par CI a chaque merge sur \`main\`.\n' +
+                      '> Source : [\`bundle-history/data.json\`](https://github.com/${{ github.repository }}/blob/gh-pages/bundle-history/data.json)';
+
+                    const readme = fs.readFileSync(readmePath, 'utf8');
+                    const startIdx = readme.indexOf(START);
+                    const endIdx = readme.indexOf(END);
+
+                    if (startIdx === -1 || endIdx === -1) {
+                      console.log('Markers not found in README.md, skipping');
+                      process.exit(0);
+                    }
+
+                    const updated = readme.slice(0, startIdx + START.length) + '\n\n' + chart + '\n\n' + readme.slice(endIdx);
+                    fs.writeFileSync(readmePath, updated, 'utf8');
+                    console.log('README chart updated');
+                  "
+
+                  cd main-dir
+                  git config user.name "github-actions[bot]"
+                  git config user.email "github-actions[bot]@users.noreply.github.com"
+                  git add README.md
+                  git diff --cached --quiet && echo "README unchanged" && exit 0
+                  git commit -m "chore: update bundle size chart in README [skip ci]"
+                  git push origin main
