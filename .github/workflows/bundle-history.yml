@@ -63,15 +63,17 @@ jobs:
               run: ${{ inputs.build_command }}
 
             - name: Measure bundle sizes (raw + gzip)
+              env:
+                  BUNDLE_PATTERNS: ${{ inputs.bundle_patterns }}
               run: |
-                  node -e "
-                    const fs = require('fs');
-                    const zlib = require('zlib');
-                    const { execSync } = require('child_process');
-                    const patterns = ${{ inputs.bundle_patterns }};
+                  node -e '
+                    const fs = require("fs");
+                    const zlib = require("zlib");
+                    const { execSync } = require("child_process");
+                    const patterns = JSON.parse(process.env.BUNDLE_PATTERNS);
                     const bundles = {};
                     for (const p of patterns) {
-                      const files = execSync('ls ' + p.glob + ' 2>/dev/null || true', {encoding:'utf8'}).trim().split('\n').filter(Boolean);
+                      const files = execSync("ls " + p.glob + " 2>/dev/null || true", {encoding:"utf8"}).trim().split("\n").filter(Boolean);
                       let size = 0, gzip = 0;
                       for (const f of files) {
                         try {
@@ -82,9 +84,9 @@ jobs:
                       }
                       bundles[p.name] = { size, gzip };
                     }
-                    fs.writeFileSync('/tmp/bundle-sizes.json', JSON.stringify(bundles));
+                    fs.writeFileSync("/tmp/bundle-sizes.json", JSON.stringify(bundles));
                     console.log(JSON.stringify(bundles, null, 2));
-                  "
+                  '
 
             - name: Update bundle history on gh-pages
               run: |
