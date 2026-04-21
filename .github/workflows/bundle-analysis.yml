@@ -92,14 +92,16 @@ jobs:
                   echo "$OUTPUT" > /tmp/size-limit-pr.json
 
             - name: Measure PR file sizes (raw + gzip)
+              env:
+                  BUNDLE_PATTERNS: ${{ inputs.bundle_patterns }}
               run: |
-                  node -e "
-                    const fs = require('fs');
-                    const zlib = require('zlib');
-                    const { execSync } = require('child_process');
-                    const patterns = ${{ inputs.bundle_patterns }};
+                  node -e '
+                    const fs = require("fs");
+                    const zlib = require("zlib");
+                    const { execSync } = require("child_process");
+                    const patterns = JSON.parse(process.env.BUNDLE_PATTERNS);
                     const results = patterns.map(p => {
-                      const files = execSync('ls ' + p.glob + ' 2>/dev/null || true', {encoding:'utf8'}).trim().split('\n').filter(Boolean);
+                      const files = execSync("ls " + p.glob + " 2>/dev/null || true", {encoding:"utf8"}).trim().split("\n").filter(Boolean);
                       let size = 0, gzip = 0;
                       for (const f of files) {
                         try {
@@ -110,9 +112,9 @@ jobs:
                       }
                       return { name: p.name, size, gzip };
                     });
-                    fs.writeFileSync('/tmp/raw-sizes-pr.json', JSON.stringify(results));
+                    fs.writeFileSync("/tmp/raw-sizes-pr.json", JSON.stringify(results));
                     console.log(JSON.stringify(results, null, 2));
-                  "
+                  '
 
             # --- Base branch build (for comparison) ---
             - name: Checkout base branch
@@ -133,14 +135,16 @@ jobs:
               run: ${{ inputs.build_command }}
 
             - name: Measure base file sizes (raw + gzip)
+              env:
+                  BUNDLE_PATTERNS: ${{ inputs.bundle_patterns }}
               run: |
-                  node -e "
-                    const fs = require('fs');
-                    const zlib = require('zlib');
-                    const { execSync } = require('child_process');
-                    const patterns = ${{ inputs.bundle_patterns }};
+                  node -e '
+                    const fs = require("fs");
+                    const zlib = require("zlib");
+                    const { execSync } = require("child_process");
+                    const patterns = JSON.parse(process.env.BUNDLE_PATTERNS);
                     const results = patterns.map(p => {
-                      const files = execSync('ls ' + p.glob + ' 2>/dev/null || true', {encoding:'utf8'}).trim().split('\n').filter(Boolean);
+                      const files = execSync("ls " + p.glob + " 2>/dev/null || true", {encoding:"utf8"}).trim().split("\n").filter(Boolean);
                       let size = 0, gzip = 0;
                       for (const f of files) {
                         try {
@@ -151,9 +155,9 @@ jobs:
                       }
                       return { name: p.name, size, gzip };
                     });
-                    fs.writeFileSync('/tmp/raw-sizes-base.json', JSON.stringify(results));
+                    fs.writeFileSync("/tmp/raw-sizes-base.json", JSON.stringify(results));
                     console.log(JSON.stringify(results, null, 2));
-                  "
+                  '
 
             # --- Restore treemap and upload ---
             - name: Restore treemap
