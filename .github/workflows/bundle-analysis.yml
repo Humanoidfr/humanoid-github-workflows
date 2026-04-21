@@ -36,6 +36,11 @@ on:
                 required: false
                 type: string
                 default: ''
+            working_directory:
+                description: 'Directory where npm ci and build run (default: repo root)'
+                required: false
+                type: string
+                default: '.'
         secrets:
             GH_TOKEN:
                 description: 'GitHub token for private npm packages'
@@ -59,15 +64,18 @@ jobs:
                   cache: 'npm'
 
             - name: Create .npmrc
+              working-directory: ${{ inputs.working_directory }}
               run: |
                   echo "@humanoidfr:registry=http://npm.pkg.github.com/" > .npmrc
                   echo "//npm.pkg.github.com/:_authToken=${{ secrets.GH_TOKEN }}" >> .npmrc
 
             # --- PR branch build ---
             - name: Install dependencies
+              working-directory: ${{ inputs.working_directory }}
               run: npm ci ${{ inputs.npm_install_args }}
 
             - name: Build PR branch
+              working-directory: ${{ inputs.working_directory }}
               run: ${{ inputs.build_command }}
               env: ${{ fromJSON(inputs.build_env) }}
 
@@ -78,6 +86,7 @@ jobs:
             - name: Run size-limit
               if: inputs.use_size_limit
               id: size-limit
+              working-directory: ${{ inputs.working_directory }}
               run: |
                   echo "## Size Limit Report" >> "$GITHUB_STEP_SUMMARY"
                   echo "" >> "$GITHUB_STEP_SUMMARY"
@@ -124,14 +133,17 @@ jobs:
                   clean: false
 
             - name: Create .npmrc (base)
+              working-directory: ${{ inputs.working_directory }}
               run: |
                   echo "@humanoidfr:registry=http://npm.pkg.github.com/" > .npmrc
                   echo "//npm.pkg.github.com/:_authToken=${{ secrets.GH_TOKEN }}" >> .npmrc
 
             - name: Install dependencies (base)
+              working-directory: ${{ inputs.working_directory }}
               run: npm ci ${{ inputs.npm_install_args }}
 
             - name: Build base branch
+              working-directory: ${{ inputs.working_directory }}
               run: ${{ inputs.build_command }}
 
             - name: Measure base file sizes (raw + gzip)
