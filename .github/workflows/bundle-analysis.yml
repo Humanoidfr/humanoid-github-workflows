@@ -1,0 +1,321 @@
+name: Bundle Analysis
+
+on:
+    workflow_call:
+        inputs:
+            build_command:
+                description: 'Build command to run (e.g. npm run build:client)'
+                required: true
+                type: string
+            bundle_patterns:
+                description: 'JSON array of {name, glob} objects for bundle measurement'
+                required: true
+                type: string
+            build_env:
+                description: 'JSON object of environment variables for the build step'
+                required: false
+                type: string
+                default: '{}'
+            node_version:
+                description: 'Node.js version to use'
+                required: false
+                type: string
+                default: '20'
+            npm_install_args:
+                description: 'Extra arguments for npm ci (e.g. --legacy-peer-deps)'
+                required: false
+                type: string
+                default: ''
+            use_size_limit:
+                description: 'Run size-limit budget check'
+                required: false
+                type: boolean
+                default: false
+            treemap_path:
+                description: 'Path to the stats.html treemap file after build (empty to skip)'
+                required: false
+                type: string
+                default: ''
+        secrets:
+            GH_TOKEN:
+                description: 'GitHub token for private npm packages'
+                required: true
+
+permissions:
+    contents: read
+    pull-requests: write
+    actions: read
+
+jobs:
+    bundle-analysis:
+        runs-on: self-hosted
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ inputs.node_version }}
+                  cache: 'npm'
+
+            - name: Create .npmrc
+              run: |
+                  echo "@humanoidfr:registry=http://npm.pkg.github.com/" > .npmrc
+                  echo "//npm.pkg.github.com/:_authToken=${{ secrets.GH_TOKEN }}" >> .npmrc
+
+            # --- PR branch build ---
+            - name: Install dependencies
+              run: npm ci ${{ inputs.npm_install_args }}
+
+            - name: Build PR branch
+              run: ${{ inputs.build_command }}
+              env: ${{ fromJSON(inputs.build_env) }}
+
+            - name: Save treemap for later upload
+              if: inputs.treemap_path != ''
+              run: cp "${{ inputs.treemap_path }}" /tmp/bundle-treemap-stats.html
+
+            - name: Run size-limit
+              if: inputs.use_size_limit
+              id: size-limit
+              run: |
+                  echo "## Size Limit Report" >> "$GITHUB_STEP_SUMMARY"
+                  echo "" >> "$GITHUB_STEP_SUMMARY"
+
+                  OUTPUT=$(./node_modules/.bin/size-limit --json 2>&1) || true
+                  echo "$OUTPUT"
+
+                  ./node_modules/.bin/size-limit 2>&1 | tee -a "$GITHUB_STEP_SUMMARY" || {
+                    echo "size_failed=true" >> "$GITHUB_OUTPUT"
+                  }
+
+                  echo "$OUTPUT" > /tmp/size-limit-pr.json
+
+            - name: Measure PR file sizes (raw + gzip)
+              run: |
+                  node -e "
+                    const fs = require('fs');
+                    const zlib = require('zlib');
+                    const { execSync } = require('child_process');
+                    const patterns = ${{ inputs.bundle_patterns }};
+                    const results = patterns.map(p => {
+                      const files = execSync('ls ' + p.glob + ' 2>/dev/null || true', {encoding:'utf8'}).trim().split('\n').filter(Boolean);
+                      let size = 0, gzip = 0;
+                      for (const f of files) {
+                        try {
+                          const buf = fs.readFileSync(f);
+                          size += buf.length;
+                          gzip += zlib.gzipSync(buf, { level: 9 }).length;
+                        } catch {}
+                      }
+                      return { name: p.name, size, gzip };
+                    });
+                    fs.writeFileSync('/tmp/raw-sizes-pr.json', JSON.stringify(results));
+                    console.log(JSON.stringify(results, null, 2));
+                  "
+
+            # --- Base branch build (for comparison) ---
+            - name: Checkout base branch
+              uses: actions/checkout@v4
+              with:
+                  ref: ${{ github.event.pull_request.base.sha }}
+                  clean: false
+
+            - name: Create .npmrc (base)
+              run: |
+                  echo "@humanoidfr:registry=http://npm.pkg.github.com/" > .npmrc
+                  echo "//npm.pkg.github.com/:_authToken=${{ secrets.GH_TOKEN }}" >> .npmrc
+
+            - name: Install dependencies (base)
+              run: npm ci ${{ inputs.npm_install_args }}
+
+            - name: Build base branch
+              run: ${{ inputs.build_command }}
+
+            - name: Measure base file sizes (raw + gzip)
+              run: |
+                  node -e "
+                    const fs = require('fs');
+                    const zlib = require('zlib');
+                    const { execSync } = require('child_process');
+                    const patterns = ${{ inputs.bundle_patterns }};
+                    const results = patterns.map(p => {
+                      const files = execSync('ls ' + p.glob + ' 2>/dev/null || true', {encoding:'utf8'}).trim().split('\n').filter(Boolean);
+                      let size = 0, gzip = 0;
+                      for (const f of files) {
+                        try {
+                          const buf = fs.readFileSync(f);
+                          size += buf.length;
+                          gzip += zlib.gzipSync(buf, { level: 9 }).length;
+                        } catch {}
+                      }
+                      return { name: p.name, size, gzip };
+                    });
+                    fs.writeFileSync('/tmp/raw-sizes-base.json', JSON.stringify(results));
+                    console.log(JSON.stringify(results, null, 2));
+                  "
+
+            # --- Restore treemap and upload ---
+            - name: Restore treemap
+              if: inputs.treemap_path != ''
+              run: |
+                  mkdir -p "$(dirname '${{ inputs.treemap_path }}')"
+                  cp /tmp/bundle-treemap-stats.html "${{ inputs.treemap_path }}"
+
+            - name: Upload bundle visualization
+              if: inputs.treemap_path != ''
+              uses: actions/upload-artifact@v4
+              with:
+                  name: bundle-treemap
+                  path: ${{ inputs.treemap_path }}
+                  retention-days: 14
+
+            - name: Comment PR with size report
+              if: always()
+              uses: actions/github-script@v7
+              with:
+                  script: |
+                      const fs = require('fs');
+
+                      // --- Artifact download URL ---
+                      let artifactUrl = null;
+                      const treemapPath = '${{ inputs.treemap_path }}';
+                      if (treemapPath) {
+                        try {
+                          const { data: { artifacts } } = await github.rest.actions.listWorkflowRunArtifacts({
+                            owner: context.repo.owner,
+                            repo: context.repo.repo,
+                            run_id: context.runId,
+                          });
+                          const treemap = artifacts.find(a => a.name === 'bundle-treemap');
+                          if (treemap) {
+                            const { data: run } = await github.rest.actions.getWorkflowRun({
+                              owner: context.repo.owner,
+                              repo: context.repo.repo,
+                              run_id: context.runId,
+                            });
+                            artifactUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/suites/${run.check_suite_id}/artifacts/${treemap.id}`;
+                          }
+                        } catch {}
+                      }
+
+                      // --- Parse outputs ---
+                      let sizeLimitResults = [];
+                      let rawPr = [];
+                      let rawBase = [];
+                      try { sizeLimitResults = JSON.parse(fs.readFileSync('/tmp/size-limit-pr.json', 'utf8')); } catch {}
+                      try { rawPr = JSON.parse(fs.readFileSync('/tmp/raw-sizes-pr.json', 'utf8')); } catch {}
+                      try { rawBase = JSON.parse(fs.readFileSync('/tmp/raw-sizes-base.json', 'utf8')); } catch {}
+
+                      // Lookup maps by name
+                      const baseByName = {};
+                      for (const r of rawBase) baseByName[r.name] = r;
+                      const budgetByName = {};
+                      for (const r of sizeLimitResults) budgetByName[r.name] = r;
+
+                      // --- Size comparison table ---
+                      let allPassed = true;
+                      let sizeTable = '';
+                      if (rawPr.length > 0) {
+                        const fmtKB = (bytes) => `${(bytes / 1024).toFixed(1)} KB`;
+
+                        const rows = rawPr.map(pr => {
+                          const base = baseByName[pr.name];
+                          const budget = budgetByName[pr.name];
+                          const diffBytes = base ? pr.size - base.size : null;
+                          const passed = !budget || !budget.sizeLimit || budget.size <= budget.sizeLimit;
+                          if (!passed) allPassed = false;
+
+                          const baseStr = base ? fmtKB(base.size) : '-';
+                          const prStr = fmtKB(pr.size);
+                          const gzipStr = pr.gzip ? fmtKB(pr.gzip) : '-';
+
+                          let budgetStr = '-';
+                          if (budget && budget.sizeLimit) {
+                            budgetStr = `${passed ? '\u2705' : '\u{1f534}'} ${fmtKB(budget.sizeLimit)}`;
+                          }
+
+                          let diffStr = '-';
+                          if (diffBytes !== null) {
+                            const absDiff = Math.abs(diffBytes);
+                            if (absDiff < 100) {
+                              diffStr = '\u2705 \u00b10';
+                            } else if (diffBytes > 0) {
+                              diffStr = `\u{1f53a} +${fmtKB(absDiff)}`;
+                            } else {
+                              diffStr = `\u{1f53d} -${fmtKB(absDiff)}`;
+                            }
+                          }
+
+                          return `| ${pr.name} | ${baseStr} | ${prStr} | ${gzipStr} | ${diffStr} | ${budgetStr} |`;
+                        });
+
+                        sizeTable = [
+                          '| Bundle | Base (main) | PR | Gzip | Diff | Budget (gzip) |',
+                          '|--------|------------:|---:|-----:|------|---------------|',
+                          ...rows,
+                        ].join('\n');
+                      } else {
+                        sizeTable = '_\u26a0\ufe0f Size limit report unavailable_';
+                      }
+
+                      // --- Build comment body ---
+                      const statusIcon = allPassed ? '\u2705' : '\u{1f534}';
+                      const bodyParts = [
+                        `### \u{1f4e6} Bundle Analysis ${statusIcon}`,
+                        '',
+                        '#### \u{1f4cf} Size Limit',
+                        '',
+                        sizeTable,
+                      ];
+
+                      if (treemapPath && artifactUrl) {
+                        bodyParts.push(
+                          '',
+                          '#### \u{1f5fa}\ufe0f Bundle Treemap',
+                          '',
+                          '| Artifact | Lien |',
+                          '|----------|------|',
+                          `| \u{1f4ca} \`bundle-treemap\` (stats.html) | ${artifactUrl ? `[\u2b07\ufe0f T\u00e9l\u00e9charger](${artifactUrl})` : '\u23f3 En cours...'} |`,
+                          '',
+                          '> \u{1f4a1} Ouvrir `stats.html` dans un navigateur pour visualiser la composition du bundle.',
+                        );
+                      }
+
+                      bodyParts.push(
+                        '',
+                        `> \u{1f4c8} [Historique des tailles](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/gh-pages/bundle-history/data.json) (mis \u00e0 jour apr\u00e8s chaque merge sur main)`,
+                      );
+
+                      const body = bodyParts.join('\n');
+
+                      // --- Post or update comment ---
+                      const { data: comments } = await github.rest.issues.listComments({
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        issue_number: context.issue.number,
+                      });
+                      const existing = comments.find(c => c.body.includes('### '));
+                      const marker = '\u{1f4e6} Bundle Analysis';
+
+                      const existingComment = comments.find(c => c.body.includes(marker));
+
+                      if (existingComment) {
+                        await github.rest.issues.updateComment({
+                          owner: context.repo.owner,
+                          repo: context.repo.repo,
+                          comment_id: existingComment.id,
+                          body,
+                        });
+                      } else {
+                        await github.rest.issues.createComment({
+                          owner: context.repo.owner,
+                          repo: context.repo.repo,
+                          issue_number: context.issue.number,
+                          body,
+                        });
+                      }
+
+            - name: Fail if size budget exceeded
+              if: inputs.use_size_limit && steps.size-limit.outputs.size_failed == 'true'
+              run: exit 1
