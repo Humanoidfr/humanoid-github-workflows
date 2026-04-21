@@ -55,6 +55,7 @@ jobs:
               with:
                   node-version: ${{ inputs.node_version }}
                   cache: 'npm'
+                  cache-dependency-path: ${{ inputs.working_directory }}/package-lock.json
 
             - name: Create .npmrc
               working-directory: ${{ inputs.working_directory }}
