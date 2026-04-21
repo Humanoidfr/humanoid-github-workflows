@@ -31,6 +31,11 @@ on:
                 required: false
                 type: number
                 default: 200
+            working_directory:
+                description: 'Directory where npm ci and build run (default: repo root)'
+                required: false
+                type: string
+                default: '.'
         secrets:
             GH_TOKEN:
                 description: 'GitHub token for private npm packages'
@@ -52,14 +57,17 @@ jobs:
                   cache: 'npm'
 
             - name: Create .npmrc
+              working-directory: ${{ inputs.working_directory }}
               run: |
                   echo "@humanoidfr:registry=http://npm.pkg.github.com/" > .npmrc
                   echo "//npm.pkg.github.com/:_authToken=${{ secrets.GH_TOKEN }}" >> .npmrc
 
             - name: Install dependencies
+              working-directory: ${{ inputs.working_directory }}
               run: npm ci ${{ inputs.npm_install_args }}
 
             - name: Build client
+              working-directory: ${{ inputs.working_directory }}
               run: ${{ inputs.build_command }}
 
             - name: Measure bundle sizes (raw + gzip)
