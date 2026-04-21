@@ -41,6 +41,11 @@ on:
                 required: false
                 type: string
                 default: '.'
+            pre_build_command:
+                description: 'Command to run before the build (e.g. install extra deps)'
+                required: false
+                type: string
+                default: ''
         secrets:
             GH_TOKEN:
                 description: 'GitHub token for private npm packages'
@@ -74,6 +79,10 @@ jobs:
             - name: Install dependencies
               working-directory: ${{ inputs.working_directory }}
               run: npm ci ${{ inputs.npm_install_args }}
+
+            - name: Pre-build command
+              if: inputs.pre_build_command != ''
+              run: ${{ inputs.pre_build_command }}
 
             - name: Build PR branch
               working-directory: ${{ inputs.working_directory }}
@@ -142,6 +151,10 @@ jobs:
             - name: Install dependencies (base)
               working-directory: ${{ inputs.working_directory }}
               run: npm ci ${{ inputs.npm_install_args }}
+
+            - name: Pre-build command (base)
+              if: inputs.pre_build_command != ''
+              run: ${{ inputs.pre_build_command }}
 
             - name: Build base branch
               working-directory: ${{ inputs.working_directory }}
