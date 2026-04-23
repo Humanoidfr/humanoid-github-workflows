@@ -28,6 +28,7 @@ on:
 jobs:
   prepare-url:
     name: Prepare URL
+    if: false # workflow en pause
     runs-on: ubuntu-latest
     outputs:
       url: ${{ steps.set-url.outputs.url }}
@@ -51,7 +52,7 @@ jobs:
 
   deploy:
     name: Deploy Staging
-    if: ${{ always() && inputs.name != '' }}
+    if: ${{ false && always() && inputs.name != '' }} # workflow en pause
     runs-on: self-hosted
     timeout-minutes: 30
     needs: prepare-url
