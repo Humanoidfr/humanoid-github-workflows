@@ -99,6 +99,7 @@ jobs:
             --pretty=format:'%H%x1f%s%x1e' \
             "$LAST_TAG"..HEAD)
           echo "commits_b64=$(printf '%s' "$commits" | base64 -w0)" >> "$GITHUB_OUTPUT"
+          echo "head_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           if [ -n "$commits" ]; then
             echo "has_commits=true" >> "$GITHUB_OUTPUT"
           else
@@ -125,6 +126,7 @@ jobs:
           ROOT_COMMITS_B64: ${{ steps.root_commits.outputs.commits_b64 }}
           ROOT_REPO: ${{ github.repository }}
           LAST_TAG: ${{ steps.last_tag.outputs.last_tag }}
+          HEAD_SHA: ${{ steps.root_commits.outputs.head_sha }}
         with:
           result-encoding: string
           github-token: ${{ secrets.REPO_TOKEN }}
@@ -147,6 +149,7 @@ jobs:
 
               const repo = process.env.ROOT_REPO;
               const lastTag = process.env.LAST_TAG;
+              const headSha = process.env.HEAD_SHA;
               const prRegex = /\(#(\d+)\)$/;
 
               const lines = records.map(r => {
@@ -156,7 +159,7 @@ jobs:
               });
 
               const section = [`## ${repo} (root)`, ``, ...lines, ``];
-              section.push(`Compare: https://github.com/${repo}/compare/${lastTag}...HEAD`);
+              section.push(`Compare: https://github.com/${repo}/compare/${lastTag}...${headSha}`);
               section.push(``);
               return section;
             }
