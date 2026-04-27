@@ -116,7 +116,7 @@ jobs:
           fi
 
       - name: Generate PR/commit summary
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         if: ${{ steps.should_release.outputs.result == 'true' }}
         id: summary
         env:
