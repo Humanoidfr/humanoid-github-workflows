@@ -200,11 +200,18 @@ jobs:
 
             async function getPackageDiff(pack) {
               const { name, operation, version_base, version_target, compare, link } = pack;
+              const commitDiff = name.startsWith('humanoid/')
+                ? await getPackageCommitDetails(pack)
+                : [];
+
+              if (!compare && commitDiff.length === 0) {
+                return [];
+              }
+
               const section = [`## ${name} (${operation})`];
               section.push(``);
-              if (name.startsWith('humanoid/')) {
-                const commitDiff = await getPackageCommitDetails(pack);
-                commitDiff.length && section.push(...commitDiff);
+              if (commitDiff.length) {
+                section.push(...commitDiff);
                 section.push(``);
               }
               section.push(`Compare: ${compare}`);
