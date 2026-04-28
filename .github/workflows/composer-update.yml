@@ -44,13 +44,19 @@ jobs:
           fetch-depth: 0
           ref: main
 
-      - name: Get last release tag
-        id: last_tag
+      - name: Get last release ref
+        id: last_release
         run: |
-          last_tag=$(git describe --tags --abbrev=0 \
-            --match='[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9].*' \
-            2>/dev/null || true)
-          echo "last_tag=$last_tag" >> "$GITHUB_OUTPUT"
+          sha=$(git log -E -n 1 \
+            --grep='^release: [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}( \(#[0-9]+\))?$' \
+            --pretty=%H HEAD)
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          if [ -n "$sha" ]; then
+            ref=$(git describe --tags --exact-match "$sha" 2>/dev/null || echo "$sha")
+          else
+            ref=""
+          fi
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
 
       # Set PHP version as an environment variable
       - name: Set PHP version
@@ -90,14 +96,13 @@ jobs:
 
       - name: Get root commits
         id: root_commits
-        if: steps.last_tag.outputs.last_tag != ''
+        if: steps.last_release.outputs.sha != ''
         env:
-          LAST_TAG: ${{ steps.last_tag.outputs.last_tag }}
+          LAST_RELEASE_SHA: ${{ steps.last_release.outputs.sha }}
         run: |
           commits=$(git log --reverse --no-merges \
-            --invert-grep --grep='^release: ' \
             --pretty=format:'%H%x1f%s%x1e' \
-            "$LAST_TAG"..HEAD)
+            "$LAST_RELEASE_SHA"..HEAD)
           echo "commits_b64=$(printf '%s' "$commits" | base64 -w0)" >> "$GITHUB_OUTPUT"
           echo "head_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           if [ -n "$commits" ]; then
@@ -125,7 +130,7 @@ jobs:
           NOW: ${{ env.NOW }}
           ROOT_COMMITS_B64: ${{ steps.root_commits.outputs.commits_b64 }}
           ROOT_REPO: ${{ github.repository }}
-          LAST_TAG: ${{ steps.last_tag.outputs.last_tag }}
+          LAST_RELEASE_REF: ${{ steps.last_release.outputs.ref }}
           HEAD_SHA: ${{ steps.root_commits.outputs.head_sha }}
         with:
           result-encoding: string
@@ -148,7 +153,7 @@ jobs:
               if (records.length === 0) return [];
 
               const repo = process.env.ROOT_REPO;
-              const lastTag = process.env.LAST_TAG;
+              const lastReleaseRef = process.env.LAST_RELEASE_REF;
               const headSha = process.env.HEAD_SHA;
               const prRegex = /\(#(\d+)\)$/;
 
@@ -159,7 +164,7 @@ jobs:
               });
 
               const section = [`## ${repo} (root)`, ``, ...lines, ``];
-              section.push(`Compare: https://github.com/${repo}/compare/${lastTag}...${headSha}`);
+              section.push(`Compare: https://github.com/${repo}/compare/${lastReleaseRef}...${headSha}`);
               section.push(``);
               return section;
             }
